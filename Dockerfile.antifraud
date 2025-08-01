@@ -1,0 +1,45 @@
+# Многоэтапная сборка для anti-fraud-analyzer
+FROM golang:1.24.4-alpine AS builder
+
+# Устанавливаем необходимые пакеты для сборки
+RUN apk add --no-cache git ca-certificates tzdata
+
+# Устанавливаем рабочую директорию
+WORKDIR /app
+
+# Копируем только необходимые файлы для anti-fraud-analyzer
+COPY go.mod go.sum ./
+
+# Скачиваем зависимости
+RUN go mod download
+
+# Копируем только нужные файлы
+COPY cmd/anti-fraud-analyzer/ ./cmd/anti-fraud-analyzer/
+COPY internal/ ./internal/
+
+# # Собираем приложение
+# RUN CGO_ENABLED=0 GOOS=linux go build -o ./bin/anti-fraud-analyzer ./cmd/anti-fraud-analyzer/main.go
+
+# Финальный образ
+FROM alpine:latest
+
+# Устанавливаем ca-certificates для HTTPS запросов
+RUN apk --no-cache add ca-certificates tzdata
+
+# Создаем пользователя для безопасности
+RUN addgroup -g 1001 -S appgroup && \
+    adduser -u 1001 -S appuser -G appgroup
+
+WORKDIR /root/
+
+# Копируем собранное приложение из builder этапа
+# COPY --from=builder ./bin/anti-fraud-analyzer .
+
+# Меняем владельца файлов
+RUN chown -R appuser:appgroup /root/
+
+# Переключаемся на непривилегированного пользователя
+USER appuser
+
+# Запускаем приложение
+CMD ["./anti-fraud-analyzer"] 
