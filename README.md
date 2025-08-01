@@ -1,4 +1,4 @@
-# 🚀 Payment Processing System
+# Payment Processing System
 
 [![Go Version](https://img.shields.io/badge/Go-1.24.4+-blue.svg)](https://golang.org)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
@@ -7,57 +7,19 @@
 > **Современная система обработки платежей с микросервисной архитектурой, построенная на Go с использованием лучших практик enterprise-разработки**
 
 
-## 🏗️ Архитектура системы
-
-### Обзор архитектуры
-
-```
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   Client Apps   │    │   Load Balancer │    │   API Gateway   │
-│   (Mobile/Web)  │───▶│   (Nginx/Envoy) │───▶│   (Future)      │
-└─────────────────┘    └─────────────────┘    └─────────────────┘
-                                                       │
-                                                       ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                    Payment Gateway Core                        │
-│  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐ │
-│  │ Payment Gateway │  │ Anti-Fraud      │  │ Alert Service   │ │
-│  │ (Port 8080)     │  │ Analyzer        │  │ (Port 8081)     │ │
-│  └─────────────────┘  └─────────────────┘  └─────────────────┘ │
-└─────────────────────────────────────────────────────────────────┘
-                       │              │              │
-                       ▼              ▼              ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                    Infrastructure Layer                         │
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐  ┌─────────┐ │
-│  │ PostgreSQL  │  │   Redis     │  │   Kafka     │  │ClickHouse│ │
-│  │ (Primary DB)│  │ (Cache/Queue)│  │(Event Stream)│  │(Analytics)│ │
-│  └─────────────┘  └─────────────┘  └─────────────┘  └─────────┘ │
-└─────────────────────────────────────────────────────────────────┘
-                       │              │              │
-                       ▼              ▼              ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                    Observability Stack                          │
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐  ┌─────────┐ │
-│  │ Prometheus  │  │   Grafana   │  │   Jaeger    │  │AlertMgr │ │
-│  │ (Metrics)   │  │ (Dashboard) │  │ (Tracing)   │  │(Alerts) │ │
-│  └─────────────┘  └─────────────┘  └─────────────┘  └─────────┘ │
-└─────────────────────────────────────────────────────────────────┘
-```
-
 ### Принципы архитектуры
 
-- **🔧 Hexagonal Architecture (Ports & Adapters)** - Чистая архитектура с разделением бизнес-логики и инфраструктуры
-- **📡 Event-Driven Architecture** - Асинхронная обработка через Kafka
-- **🔄 CQRS Pattern** - Разделение операций чтения и записи
-- **🛡️ Circuit Breaker** - Отказоустойчивость и graceful degradation
-- **📊 Event Sourcing** - Аудит и восстановление состояния
+- **Hexagonal Architecture (Ports & Adapters)** - Чистая архитектура с разделением бизнес-логики и инфраструктуры
+- **Event-Driven Architecture** - Асинхронная обработка через Kafka
+- **CQRS Pattern** - Разделение операций чтения и записи
+- **ircuit Breaker** - Отказоустойчивость и graceful degradation
+- **Event Sourcing** - Аудит и восстановление состояния
 
 ---
 
-## 🔧 Микросервисы
+### Микросервисы
 
-### 1. 🏦 Payment processing Service
+### 1. Payment processing Service
 
 **Порт:** `8080` | **Основная роль:** Обработка платежных транзакций
 
@@ -85,7 +47,7 @@ GET  /transaction/{id}     # Получение статуса транзакц�
 GET  /health              # Health check
 ```
 
-### 2. 🕵️ Anti-Fraud Analyzer Service
+### 2. Anti-Fraud Analyzer Service
 
 **Порт:** `8081` | **Основная роль:** Анализ мошеннических транзакций
 
@@ -101,7 +63,7 @@ GET  /health              # Health check
 - **Streaming:** Kafka для обработки событий
 - **Performance:** Оптимизированные запросы для больших объемов данных
 
-### 3. 🚨 Alert Service
+### 3. Alert Service
 
 **Порт:** `8082` | **Основная роль:** Система уведомлений
 
@@ -118,9 +80,34 @@ GET  /health              # Health check
 - **Notifications:** Telegram Bot API
 - **Configuration:** YAML конфигурация правил
 
+### 4. txn-generator
+
+**Порт:** `8080/transaction` | **Основная роль:** Генератор нагрузки
+
+**Функциональность:**
+
+- ✅ Имитирует клиентов, отправляя транзакции с заданной интенсивностью
+- ✅ по умолчанию 20 RPS - requests per second (запросов в секунду)
+- ✅ Проверка нагрузочного тестирования
+- ✅ проверки поведения системы в условиях, близких к реальным
+
+**Технологии:**
+
+- **Go-faker:** Генератор нагрузочных данных
+
+
+**Пример использования:**
+```bash
+go run ./cmd/txn-generator -rps=50 -target="http://localhost:8080/transaction"
+
+```
+
+
 ---
 
-## 🛠️ Технологический стек
+---
+
+## Технологический стек
 
 ### Backend
 
@@ -156,7 +143,7 @@ GET  /health              # Health check
 
 ---
 
-## 🚀 Быстрый старт
+## Быстрый старт
 
 ### Предварительные требования
 
@@ -247,7 +234,7 @@ curl http://localhost:8080/transaction/{transaction_id}
 
 ---
 
-## 🔒 Безопасность
+## Безопасность
 
 ### Реализованные меры
 
@@ -267,7 +254,7 @@ curl http://localhost:8080/transaction/{transaction_id}
 
 ---
 
-## 📈 Масштабируемость
+## Масштабируемость
 
 ### Горизонтальное масштабирование
 
@@ -301,7 +288,7 @@ services:
 
 ---
 
-## ✅ Что реализовано
+## Что реализовано
 
 ### ✅ Core Features
 
@@ -346,9 +333,9 @@ services:
 
 ---
 
-## 🔄 Roadmap
+## Roadmap
 
-### 🚀  Enhanced Security & Performance
+###  Enhanced Security & Performance
 
 - [ ] **OAuth 2.0 Integration** - Полноценная аутентификация
 - [ ] **API Gateway** - Kong или Envoy для управления API
@@ -356,7 +343,7 @@ services:
 - [ ] **Performance Optimization** - Оптимизация запросов и кэширования
 - [ ] **Load Testing** - Тестирование под нагрузкой с k6
 
-### 🚀  Advanced Analytics & ML
+###  Advanced Analytics & ML
 
 - [ ] **Machine Learning Pipeline** - Интеграция с ML моделями
 - [ ] **Real-time Analytics** - Расширенная аналитика в ClickHouse
@@ -364,7 +351,7 @@ services:
 - [ ] **Predictive Analytics** - Прогнозирование трендов
 - [ ] **A/B Testing Framework** - Фреймворк для A/B тестирования
 
-### 🚀  Enterprise Features
+###  Enterprise Features
 
 - [ ] **Multi-tenancy** - Поддержка множественных клиентов
 - [ ] **Advanced Reporting** - Детальная отчетность
@@ -372,7 +359,7 @@ services:
 - [ ] **Advanced Monitoring** - Расширенный мониторинг
 - [ ] **Disaster Recovery** - План аварийного восстановления
 
-### 🚀 Cloud Native & Scale
+### Cloud Native & Scale
 
 - [ ] **Kubernetes Deployment** - Полная поддержка K8s
 - [ ] **Service Mesh** - Istio для управления трафиком
@@ -385,12 +372,7 @@ services:
 
 ---
 
----
 
 <div align="center">
-
-**⭐ Если проект оказался полезным, поставьте звездочку! ⭐**
-
-_Built with ❤️ using Go and modern microservices architecture_
-
+**Если проект оказался полезным, поставьте звездочку! ⭐**
 </div>
