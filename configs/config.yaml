@@ -1,0 +1,11 @@
+server_port: ':8080'
+
+postgres:
+  dsn: '${POSTGRES_DSN:-postgres://postgres:password@localhost:5432/payment_gateway?sslmode=disable}'
+
+kafka:
+  bootstrap_servers: '${KAFKA_BOOTSTRAP_SERVERS:-localhost:9092}'
+  topic: 'transactions.created'
+
+redis:
+  addr: '${REDIS_ADDR:-localhost:6379}'

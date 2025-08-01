@@ -1,0 +1,30 @@
+syntax = "proto3";
+
+package transactions.v1;
+
+// Option for Go to ensure that generated code is in the correct package.
+option go_package = "github.com/sensoria-pro/payment-processing-system/gen/go/proto/v1;transactionsv1";
+
+import "google/protobuf/timestamp.proto";
+
+// Service that will be implemented in the anti-fraud microservice
+service FraudAnalyzerService {
+  //TODO: Метод для анализа транзакции
+  rpc AnalyzeTransaction (AnalyzeTransactionRequest) returns (AnalyzeTransactionResponse);
+}
+
+// The message that payment-gateway will send
+message AnalyzeTransactionRequest {
+  string transaction_id = 1;
+  string card_number_hash = 2;  //TODO: Передаем не сам номер карты, а его хэш
+  double amount = 3;
+  string currency = 4;
+  google.protobuf.Timestamp timestamp = 5;
+}
+
+// Response from anti-fraud service
+message AnalyzeTransactionResponse {
+  string transaction_id = 1;
+  bool is_fraudulent = 2;
+  string reason = 3;
+}

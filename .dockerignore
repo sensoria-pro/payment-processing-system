@@ -1,0 +1,50 @@
+# Git
+.git
+.gitignore
+
+# Docker
+Dockerfile*
+docker-compose*.yml
+.dockerignore
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Temporary files
+tmp/
+temp/
+
+# Documentation
+README.md
+*.md
+
+# Scripts (кроме тех, что нужны для сборки)
+scripts/
+
+# Configs (кроме тех, что нужны для сборки)
+configs/
+
+# Migrations (кроме тех, что нужны для сборки)
+migrations_clickhouse/
+migrations_postgres/
+
+# Monitoring configs
+prometheus*.yml
+alertmanager.yml
+
+# Environment files
+.env
+env.example
+
+# Makefile
+Makefile 

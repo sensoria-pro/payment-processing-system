@@ -1,0 +1,89 @@
+openapi: 3.0.3
+info:
+  title: "payment-processing-system API"
+  description: "API for processing financial transactions."
+  version: "1.0.0"
+servers:
+  - url: "/api/v1"
+paths:
+  /transaction:
+    post:
+      summary: "Accept a new transaction for processing"
+      operationId: "createTransaction"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TransactionRequest'
+      responses:
+        '202':
+          description: "Accepted. The transaction is accepted for asynchronous processing."
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TransactionResponse'
+        '400':
+          description: "Bad Request. Invalid input data."
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: "Internal Server Error."
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  schemas:
+    TransactionRequest:
+      type: object
+      properties:
+        idempotency_key:
+          type: string
+          format: uuid
+          description: "Unique key to prevent duplicate processing."
+        card_number:
+          type: string
+          example: "4000123456789010"
+          description: "PAN of the card."
+        expiry_month:
+          type: integer
+          example: 12
+        expiry_year:
+          type: integer
+          example: 2028
+        cvc:
+          type: string
+          example: "123"
+        amount:
+          type: number
+          format: double
+          description: "Transaction amount."
+          example: 99.99
+        currency:
+          type: string
+          description: "ISO 4217 currency code."
+          example: "USD"
+      required:
+        - idempotency_key
+        - card_number
+        - amount
+        - currency
+
+    TransactionResponse:
+      type: object
+      properties:
+        transaction_id:
+          type: string
+          format: uuid
+          description: "Unique identifier of the created transaction."
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+          description: "A developer-facing error message."
