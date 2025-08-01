@@ -1,0 +1,8 @@
+# alertmanager.yml
+route:
+  receiver: 'webhook-receiver' # Получатель по умолчанию
+
+receivers:
+  - name: 'webhook-receiver'
+    webhook_configs:
+      - url: 'http://alerter-service:8080/alert' # Отправляем вебхук в наш сервис
