@@ -118,6 +118,45 @@ go run ./cmd/ch-query-tool top-cards --limit=5
 
 ```
 
+### 6. dlq-tool
+
+ **Основная роль:** CLI-инструмент для проверки и повторной отправки сообщений из очередей недоставленных писем (DLQ) Kafka.
+
+**Функциональность:**
+
+- ✅ **Просмотр сообщений** в DLQ со смещением, ключом и подробностями об ошибках
+- ✅ **Повторить сообщения** по разделу и смещению к целевой теме
+- ✅ **Табличный вывод** с заголовками типа `error_type`, `error_string`
+- ✅ **CLI на базе Cobra** с интуитивно понятными командами
+
+
+**Пример использования:** /
+**Просмотр сообщений в DLQ:**
+```bash
+go run ./cmd/dlq-tool view --brokers=localhost:9092 --dlq-topic=transactions.created.dlq --limit=10
+
+```
+**Повторите сообщение:**
+```bash
+go run ./cmd/dlq-tool retry 0:123 --brokers=localhost:9092 --dlq-topic=transactions.created.dlq --target-topic=transactions.created
+
+```
+| flag        | описание      | значение                    |
+| ----------------- | --------------- | ----------------------------- |
+| --brokers   | Адреса брокеров Kafka  | localhost:9092 метрик  |
+| --dlq-topic | Название темы DLQ    |transactions.created.dlq |
+| --target-topic | Цель для повторной попытки |transactions.created |
+| --limit | Количество сообщений для просмотра    |10 |
+
+** Пример результата **
+```
+OFFSET          KEY     ERROR_TYPE      ERROR_STRING
+------          ---     ----------      ------------
+[0@123]         key1    Validation      invalid JSON schema
+[0@124]         key2    Timeout         processing timeout
+
+```
+
 ---
 
 ---

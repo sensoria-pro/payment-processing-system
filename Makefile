@@ -179,7 +179,7 @@ build-dlq-tool: ## Сборка dlq-tool
 
 run-dlq-tool: ## Запуск dlq-tool
 	@echo "Запуск dlq-tool..."
-	go run cmd/dlq-tool/main.go
+	./bin/dlq-tool view --brokers=localhost:9092 --dlq-topic=transactions.created.dlq --limit=10
 
 build-service-doctor: ## Сборка service-doctor
 	@echo "Сборка service-doctor..."
