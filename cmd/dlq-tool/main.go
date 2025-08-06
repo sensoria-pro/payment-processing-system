@@ -120,6 +120,8 @@ func main() {
 }
 
 // Helper functions
+
+// getErrorHeaders extracts error_type and error_string from Kafka headers
 func getErrorHeaders(headers []kafka.Header) (string, string) {
 	var errorType, errorString = "N/A", "N/A"
 	for _, h := range headers {
@@ -132,7 +134,7 @@ func getErrorHeaders(headers []kafka.Header) (string, string) {
 	}
 	return errorType, errorString
 }
-
+// parsePartitionOffset parses "partition:offset" string into integers
 func parsePartitionOffset(arg string) (int, int64) {
 	parts := strings.Split(arg, ":")
 	if len(parts) != 2 {
