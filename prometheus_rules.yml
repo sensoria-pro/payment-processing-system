@@ -1,0 +1,12 @@
+# prometheus_rules.yml
+groups:
+  - name: service_alerts
+    rules:
+      - alert: HighErrorRate
+        expr: sum(rate(http_requests_total{job="payment-gateway", code=~"5.*"}[1m])) > 0
+        for: 1m
+        labels:
+          severity: 'critical'
+        annotations:
+          summary: "High error rate on payment-gateway"
+          description: "More than 0 errors per minute detected on {{ $labels.instance }}."
