@@ -1,0 +1,31 @@
+# Role for installing Docker and Docker Compose
+- name: Remove existing Docker repo (if any)
+  ansible.builtin.file:
+    path: /etc/apt/sources.list.d/docker.list
+    state: absent
+
+- name: Add Docker's official GPG key
+  apt_key:
+    url: https://download.docker.com/linux/debian/gpg
+    state: present
+
+- name: Add Docker repository
+  apt_repository:
+    repo: deb [arch=amd64] https://download.docker.com/linux/debian {{ ansible_distribution_release }} stable
+    state: present
+
+- name: Install Docker packages
+  apt:
+    name: ['docker-ce', 'docker-ce-cli', 'containerd.io', 'docker-buildx-plugin', 'docker-compose-plugin']
+    state: present
+    update_cache: yes
+
+- name: Add user to docker group
+  user:
+    name: '{{ ansible_user }}'
+    groups: docker
+    append: yes
+    
+- name: Update apt cache after adding Docker repo
+  apt:
+    update_cache: yes    

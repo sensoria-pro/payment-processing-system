@@ -1,0 +1,40 @@
+- name: Подготовка сервера для Go-приложения
+  hosts: '{{ hosts }}'
+  become: yes
+  tasks:
+    - name: Обновить пакеты
+      apt:
+        update_cache: yes
+        upgrade: dist
+
+    - name: Установить базовые инструменты
+      apt:
+        name:
+          - curl
+          - wget
+          - git
+          - unzip
+        state: present
+
+    - name: Установить Docker
+      apt:
+        name: docker.io
+        state: present
+
+    - name: Включить Docker
+      systemd:
+        name: docker
+        enabled: yes
+        state: started
+
+    - name: Добавить пользователя в docker
+      user:
+        name: '{{ ansible_user }}'
+        groups: docker
+        append: yes
+  roles:
+    - role: common
+    - role: docker
+    - role: security 
+    - role: monitoring 
+    - role: portainer
