@@ -4,13 +4,14 @@
     name: portainer_data
 
 - name: Deploy Portainer container
-  docker_container:
+  community.docker.docker_container:
     name: portainer
     image: portainer/portainer-ce:latest
+    state: started
     ports:
       - "9443:9443" # Secure Port
       - "8000:8000"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - portainer_data:/data
-    restart_policy: always
+    restart_policy: always   

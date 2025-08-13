@@ -1,4 +1,4 @@
-# Роль для мониторинга
+# Role for monitoring
 
 - name: Download Node Exporter
   get_url:

@@ -1,6 +1,47 @@
 - name: Подготовка сервера для Go-приложения
-  hosts: '{{ hosts }}'
+  hosts: app
   become: yes
+  pre_tasks:
+    - name: Remove Docker repo lines from /etc/apt/sources.list (avoid Signed-By conflicts)
+      ansible.builtin.lineinfile:
+        path: /etc/apt/sources.list
+        regexp: '^\s*deb\s+.*download\.docker\.com/linux/debian'
+        state: absent
+
+    - name: Remove possible Docker repo files in sources.list.d
+      ansible.builtin.file:
+        path: '/etc/apt/sources.list.d/{{ item }}'
+        state: absent
+      loop:
+        - docker.list
+        - docker.list.save
+        - docker.list.bak
+        - docker-ce.list
+        - docker-ce-stable.list
+        - download_docker_com_linux_debian.list
+
+    - name: Find any docker-related repo files in sources.list.d
+      ansible.builtin.find:
+        paths: /etc/apt/sources.list.d
+        patterns: '*docker*'
+        file_type: file
+      register: docker_repo_files
+
+    - name: Remove found docker-related repo files
+      ansible.builtin.file:
+        path: '{{ item.path }}'
+        state: absent
+      loop: '{{ docker_repo_files.files }}'
+      when: docker_repo_files.matched | default(0) | int > 0
+
+    - name: Pre-flight apt cache update after cleanup
+      ansible.builtin.apt:
+        update_cache: yes
+      register: apt_cache_preflight
+      retries: 3
+      delay: 2
+      until: apt_cache_preflight is succeeded
+
   tasks:
     - name: Обновить пакеты
       apt:
@@ -14,11 +55,6 @@
           - wget
           - git
           - unzip
-        state: present
-
-    - name: Установить Docker
-      apt:
-        name: docker.io
         state: present
 
     - name: Включить Docker
@@ -35,6 +71,6 @@
   roles:
     - role: common
     - role: docker
-    - role: security 
-    - role: monitoring 
+    - role: security
+    - role: monitoring
     - role: portainer
