@@ -1,0 +1,114 @@
+name: Main CI/CD Pipeline
+
+# Triggers: run on push to the main branch and on Pull Request in main
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  # --- JOB 1: Build and Test ---
+  # This job is the core job. It tests the code and builds Docker images.
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      # 1. Download the source code of the repository
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # 2. Setting up the Go environment
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.25'
+
+      # 3. Run the linter (code style check)
+      - name: Run Linter
+        run: make lint
+
+      # 4. Run tests
+      - name: Run Tests
+        run: make test
+
+      # 5. Login to Docker Hub to publish images
+      - name: Login to Docker Hub
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      # 6. Build and publish the payment-gateway image
+      - name: Build and push payment-gateway
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          push: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }} # push=true only for main
+          tags: tonygilman/payment-processing-system:latest
+
+      # 7. Build and publish the anti-fraud-analyzer image
+      - name: Build and push anti-fraud-analyzer
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile.antifraud
+          push: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+          tags: tonygilman/anti-fraud-analyzer:latest
+
+    # --- JOB 2: Security Scan ---
+    # This job runs in parallel with build-and-test to save time.
+  security-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # 1. Scanning Go code for dependency vulnerabilities
+      - name: Run Snyk to check for vulnerabilities
+        uses: snyk/actions/golang@master
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+
+      # 2. Scanning Docker image for OS vulnerabilities
+      # We can't access the image from another job, so we build it here locally (no push)
+      - name: Build image locally for Trivy scan
+        run: docker build -t temp-gateway-image -f ./Dockerfile .
+
+      - name: Scan payment-gateway image with Trivy
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: 'temp-gateway-image'
+          format: 'table'
+          exit-code: '1'
+          ignore-unfixed: true
+          severity: 'HIGH,CRITICAL'
+
+    # --- JOB 3: Deploy ---
+    # This job is only run after 'build-and-test' has completed successfully
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build-and-test
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' # Запускаем только при пуше в main
+    environment: production
+
+    steps:
+      - name: Deploy to Production Server
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.PROD_SERVER_HOST }}
+          username: ${{ secrets.PROD_SERVER_USERNAME }}
+          key: ${{ secrets.PROD_SERVER_SSH_KEY }}
+          script: |
+            # Go to the working directory on the server
+            cd /opt/app
+
+            # Login to Docker Hub to download fresh images
+            echo ${{ secrets.DOCKERHUB_TOKEN }} | docker login -u ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
+
+            # Download the latest versions of the images that we just published
+            docker-compose pull
+
+            # Restart services. Docker Compose will recreate only those containers whose images have been updated.
+            docker-compose up -d
