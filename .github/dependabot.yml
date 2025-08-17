@@ -1,0 +1,23 @@
+version: 2
+updates:
+  - package-ecosystem: "gomod"
+    directory: "/"
+    schedule:
+      interval: "daily"
+    # Add "dependencies" tag to all PRs from Dependabot
+    labels:
+      - "dependencies"
+    # Group dependency updates into one PR if possible
+    groups:
+      go-dependencies:
+        patterns:
+          - "*"
+
+  # Rule for checking GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    labels:
+      - "ci"
+      - "dependencies"
