@@ -65,18 +65,16 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # 1. Scanning Go code for dependency vulnerabilities
-      - name: Run Snyk to check for vulnerabilities
-        uses: snyk/actions/golang@master
-        env:
-          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+      # 1. Check dependencies in a Pull Request
+      # This Action will fail the build if the PR adds a vulnerable dependency
+      - name: Dependency Review
+        uses: actions/dependency-review-action@v4
 
-      # 2. Scanning Docker image for OS vulnerabilities
-      # We can't access the image from another job, so we build it here locally (no push)
-      - name: Build image locally for Trivy scan
+      # 2. Scanning Docker images for vulnerabilities
+      - name: Build image for scan
         run: docker build -t temp-gateway-image -f ./Dockerfile .
-
-      - name: Scan payment-gateway image with Trivy
+      
+      - name: Scan image with Trivy
         uses: aquasecurity/trivy-action@master
         with:
           image-ref: 'temp-gateway-image'
@@ -84,6 +82,7 @@ jobs:
           exit-code: '1'
           ignore-unfixed: true
           severity: 'HIGH,CRITICAL'
+    
 
     # --- JOB 3: Deploy ---
     # This job is only run after 'build-and-test' has completed successfully
