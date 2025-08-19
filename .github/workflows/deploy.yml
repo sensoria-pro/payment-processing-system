@@ -15,7 +15,7 @@ jobs:
     steps:
       # 1. Download the source code of the repository
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       # 2. Setting up the Go environment
       - name: Set up Go
@@ -63,7 +63,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       # 1. Check dependencies in a Pull Request
       # This Action will fail the build if the PR adds a vulnerable dependency
