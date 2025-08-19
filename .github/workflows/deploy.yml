@@ -41,7 +41,7 @@ jobs:
 
       # 6. Build and publish the payment-gateway image
       - name: Build and push payment-gateway
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: .
           file: ./Dockerfile
@@ -50,7 +50,7 @@ jobs:
 
       # 7. Build and publish the anti-fraud-analyzer image
       - name: Build and push anti-fraud-analyzer
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: .
           file: ./Dockerfile.antifraud
