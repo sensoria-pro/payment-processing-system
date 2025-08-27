@@ -1,5 +1,6 @@
 # Git
 .git
+.github
 .gitignore
 
 # Docker
@@ -40,6 +41,7 @@ migrations_postgres/
 
 # Monitoring configs
 prometheus*.yml
+prometheus_rules.yml
 alertmanager.yml
 
 # Environment files
@@ -48,3 +50,6 @@ env.example
 
 # Makefile
 Makefile 
+
+# Ansible
+ansible/
