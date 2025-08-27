@@ -104,6 +104,13 @@ jobs:
             # Go to the working directory on the server
             cd /opt/app
 
+            # Create a .env file with secrets BEFORE launching
+            echo "POSTGRES_DSN=${{ secrets.PROD_POSTGRES_DSN }}" > .env
+            echo "KAFKA_BOOTSTRAP_SERVERS=${{ secrets.PROD_KAFKA_SERVERS }}" >> .env
+            echo "REDIS_ADDR=${{ secrets.PROD_REDIS_ADDR }}" >> .env
+            echo "JWT_SECRET=${{ secrets.PROD_JWT_SECRET }}" >> .env
+            echo "TELEGRAM_BOT_TOKEN=${{ secrets.PROD_TELEGRAM_BOT_TOKEN }}" >> .env
+
             # Login to Docker Hub to download fresh images
             echo ${{ secrets.DOCKERHUB_TOKEN }} | docker login -u ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
 
