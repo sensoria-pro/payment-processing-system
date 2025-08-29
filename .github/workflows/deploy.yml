@@ -12,6 +12,10 @@ jobs:
   # This job is the core job. It tests the code and builds Docker images.
   build-and-test:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        go: [1.24, 1.25]
+    name: Build & Test
     steps:
       # 1. Download the source code of the repository
       - name: Checkout code
@@ -21,9 +25,14 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: 'stable'
-
+          go-version: ${{ matrix.go }}
       # 3. Run the linter (code style check)
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v8
+        with:
+          version: v2.1.6    
+      - run: go test -race -coverprofile=coverage.txt -covermode=atomic ./...
+     
       - name: Run Linter
         run: make lint
 
