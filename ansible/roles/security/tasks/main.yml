@@ -1,0 +1,26 @@
+# The Role of Security Settings
+- name: Install fail2ban
+  apt:
+    name: fail2ban
+    state: present
+
+- name: Create custom jail configuration
+  copy:
+    dest: /etc/fail2ban/jail.local
+    content: |
+      [DEFAULT]
+      # Баним на 1 час
+      bantime = 1h
+      # Если было 5 неудачных попыток за последние 10 минут
+      findtime = 10m
+      maxretry = 5
+
+      [sshd]
+      enabled = true
+  notify: restart fail2ban
+
+- name: Enable and start fail2ban service
+  service:
+    name: fail2ban
+    enabled: yes
+    state: started

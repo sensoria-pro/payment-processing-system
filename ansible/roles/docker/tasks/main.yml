@@ -1,0 +1,102 @@
+# Role for installing Docker and Docker Compose
+- name: Ensure apt is available
+  ansible.builtin.package:
+    name: apt-transport-https
+    state: present
+
+- name: Ensure curl is installed
+  ansible.builtin.package:
+    name: curl
+    state: present
+
+- name: Create directory for APT keys
+  ansible.builtin.file:
+    path: /etc/apt/keyrings
+    state: directory
+    mode: '0755'
+
+- name: Remove duplicate or broken Docker repo files
+  ansible.builtin.file:
+    path: '/etc/apt/sources.list.d/{{ item }}'
+    state: absent
+  loop:
+    - docker.list
+    - docker.list.save
+    - docker.list.bak
+    - docker-ce.list
+    - docker-ce-stable.list
+    - download_docker_com_linux_debian.list
+
+- name: Remove any Docker repo lines from main sources.list (to avoid Signed-By conflicts)
+  ansible.builtin.lineinfile:
+    path: /etc/apt/sources.list
+    regexp: '^\s*deb\s+.*download\.docker\.com/linux/debian'
+    state: absent
+  notify: restart docker
+
+- name: Download Docker GPG key (ASCII)
+  ansible.builtin.get_url:
+    url: https://download.docker.com/linux/debian/gpg
+    dest: /etc/apt/keyrings/docker.asc
+    mode: '0644'
+    force: yes
+  register: docker_gpg_download
+
+- name: Remove existing Docker GPG binary key if present (avoid stale key)
+  ansible.builtin.file:
+    path: /etc/apt/keyrings/docker.gpg
+    state: absent
+
+- name: Convert Docker GPG key to binary format
+  ansible.builtin.command: 'gpg --dearmor -o /etc/apt/keyrings/docker.gpg /etc/apt/keyrings/docker.asc'
+  args:
+    creates: /etc/apt/keyrings/docker.gpg
+  when: docker_gpg_download is succeeded
+
+- name: Ensure permissions on Docker GPG key
+  ansible.builtin.file:
+    path: /etc/apt/keyrings/docker.gpg
+    mode: '0644'
+  when: docker_gpg_download is succeeded
+
+- name: Set docker_arch fact (amd64/arm64)
+  ansible.builtin.set_fact:
+    docker_arch: "{{ 'arm64' if ansible_architecture in ['aarch64','arm64'] else 'amd64' }}"
+
+- name: Add Docker repository (signed-by, pinned filename)
+  ansible.builtin.apt_repository:
+    repo: 'deb [arch={{ docker_arch }} signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/debian {{ ansible_distribution_release }} stable'
+    state: present
+    filename: docker
+  when: docker_gpg_download is succeeded
+
+- name: Update apt cache
+  ansible.builtin.apt:
+    update_cache: yes
+  register: apt_cache_update
+  retries: 3
+  delay: 2
+  until: apt_cache_update is succeeded
+
+- name: Install Docker CE packages
+  ansible.builtin.apt:
+    name:
+      - docker-ce
+      - docker-ce-cli
+      - containerd.io
+      - docker-buildx-plugin
+      - docker-compose-plugin
+    state: present
+
+- name: Ensure Docker service is enabled and started
+  ansible.builtin.systemd:
+    name: docker
+    enabled: yes
+    state: started
+  notify: restart docker
+
+- name: Ensure user is in docker group
+  ansible.builtin.user:
+    name: '{{ ansible_user }}'
+    groups: docker
+    append: yes

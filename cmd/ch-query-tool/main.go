@@ -10,6 +10,7 @@ import (
 
 	"github.com/ClickHouse/clickhouse-go/v2"
 	"github.com/spf13/cobra"
+	"context"
 )
 
 func main() {
@@ -32,6 +33,10 @@ func main() {
 				log.Fatalf("Query failed: %v", err)
 			}
 
+			rows, err := conn.Query(context.Background(), "SELECT transaction_id, reason, processed_at FROM fraud_reports WHERE is_fraudulent = 1 ORDER BY processed_at DESC LIMIT 20")
+			if err != nil {
+				log.Fatal(err)
+			}
 			w := tabwriter.NewWriter(os.Stdout, 0, 0, 3, ' ', 0)
 			fmt.Fprintln(w, "TRANSACTION ID\tREASON\tPROCESSED AT")
 			for rows.Next() {
@@ -80,6 +85,9 @@ func main() {
 	}
 	// Add the --limit flag to the top-cards command with a default value of 10
 	topCardsCmd.Flags().Int("limit", 10, "Number of top cards to show")
+			//TODO: Логика для top-cards...
+		},
+	}
 
 	rootCmd.AddCommand(suspiciousCmd, topCardsCmd)
 	rootCmd.Execute()
@@ -88,11 +96,15 @@ func main() {
 func connect(dsn string) clickhouse.Conn {
 	conn, err := clickhouse.Open(&clickhouse.Options{
 		Addr: []string{dsn},
+
 		// Adding a timeout to improve reliability
 		DialTimeout: 5 * time.Second,
 	})
 	if err != nil {
 		log.Fatalf("Failed to connect to ClickHouse: %v", err)
+	})
+	if err != nil {
+		log.Fatal(err)
 	}
 	return conn
 }

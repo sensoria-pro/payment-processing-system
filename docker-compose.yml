@@ -1,0 +1,199 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: payment_gateway_db
+    environment:
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - '${DB_PORT}:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./scripts/init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${DB_USER}']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Optional: pgAdmin for database management
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: payment_gateway_pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD}
+    ports:
+      - '${PGADMIN_PORT}:80'
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ['CMD', 'curl', '-f', 'http://localhost:80/misc/ping']
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - '${REDIS_PORT}:6379'
+
+  clickhouse:
+    image: clickhouse/clickhouse-server:24.3
+    ports:
+     - '${CLICKHOUSE_HTTP_PORT}:8123' # HTTP
+     - '${CLICKHOUSE_NATIVE_PORT}:9000' # Native
+    environment:
+      CLICKHOUSE_DB: ${CLICKHOUSE_DB}
+      CLICKHOUSE_USER: ${CLICKHOUSE_USER}
+      CLICKHOUSE_PASSWORD: ${CLICKHOUSE_PASSWORD}
+      CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT: ${CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT}
+    volumes:
+      - clickhouse_data:/var/lib/clickhouse
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://localhost:8123/ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5  
+
+  # --- Migrants ---
+  postgres-migrator:
+    image: migrate/migrate
+    volumes:
+      - ./migrations_postgres:/migrations
+    command:
+      ['-path', '/migrations', '-database', 'postgres://${DB_USER}:${DB_PASSWORD}@postgres:5432/${DB_NAME}?sslmode=disable', 'up']
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  clickhouse-migrator:
+    image: clickhouse/clickhouse-server:24.3
+    volumes:
+      - ./migrations_clickhouse:/migrations
+    command: >
+      clickhouse-client --host clickhouse --port 9000 --query "
+      CREATE TABLE IF NOT EXISTS default.fraud_reports (
+          transaction_id UUID,
+          is_fraudulent  UInt8,
+          reason         String,
+          card_hash      String,
+          amount         Float64,
+          processed_at   DateTime
+      ) ENGINE = MergeTree()
+      ORDER BY (processed_at, transaction_id);"
+    depends_on:
+      clickhouse:
+        condition: service_started
+
+  # --- Message broker ---
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.6.1
+    environment:
+      ZOOKEEPER_CLIENT_PORT: ${ZOOKEEPER_CLIENT_PORT}
+
+  kafka:
+    image: confluentinc/cp-kafka:7.6.1
+    depends_on:
+      - zookeeper
+    ports:
+      - '${KAFKA_PORT}:9092'
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: 'zookeeper:2181'
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_INTERNAL:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092,PLAINTEXT_INTERNAL://kafka:29092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+
+  prometheus:
+    image: prom/prometheus:v2.53.0
+    ports:
+      - '${PROMETHEUS_PORT}:9090'
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./prometheus_rules.yml:/etc/prometheus/rules/prometheus_rules.yml # File with rules for alerts
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+    depends_on:
+      - payment-gateway
+
+  grafana:
+    image: grafana/grafana-oss:11.1.0
+    ports:
+      - '${GRAFANA_PORT}:3000'
+    depends_on:
+      - prometheus
+
+  jaeger:
+    image: jaegertracing/all-in-one:1.57
+    ports:
+      - '${JAEGER_PORT}:16686' # UI
+      - '${JAEGER_PORT_GRPC}:4317' # gRPC Receiver for OpenTelemetry
+
+  alertmanager:
+    image: prom/alertmanager:v0.27.0
+    ports:
+      - '${ALERTMANAGER_PORT}:9093'
+    volumes:
+      - './alertmanager.yml:/etc/alertmanager/alertmanager.yml'
+    command:
+      - '--config.file=/etc/alertmanager/alertmanager.yml'
+
+
+  # --- Microservices ---
+  payment-gateway:
+    build: . # Dockerfile must be in the root
+    ports:
+      - '${APP_PORT}:8080'
+    env_file:
+      - .env  
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+      redis:
+        condition: service_started
+      postgres-migrator:
+        condition: service_completed_successfully
+
+  anti-fraud-analyzer:
+    build:
+      context: .
+      dockerfile: Dockerfile.antifraud # We use a separate Dockerfile
+    env_file:
+      - .env  
+    depends_on:
+      clickhouse:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+      clickhouse-migrator:
+        condition: service_completed_successfully
+
+  alerter-service:
+    build:
+      context: .
+      dockerfile: Dockerfile.alerter
+    env_file:
+      - .env  
+    ports:
+      - '${ALERTER_SERVICE_PORT}:8081' # We use another external port to avoid conflicts
+    environment:
+      # Passing Secrets as Environment Variables
+      # TELEGRAM_BOT_TOKEN: '${TELEGRAM_BOT_TOKEN}'
+      # TELEGRAM_CHAT_ID: '${TELEGRAM_CHAT_ID}'     
+
+volumes:
+  postgres_data:
+  pgadmin_data:
+  clickhouse_data:

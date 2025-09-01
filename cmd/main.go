@@ -25,6 +25,9 @@ import (
 
 func main() {
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
+	// TODO: Секрет для JWT. В проде - из Vault/KMS!
+    jwtSecret := []byte("test-very-secret-key")
+	
 	
 	cfg, err := config.Load("configs/config.yaml")
 	if err != nil {
@@ -78,6 +81,17 @@ func main() {
 	})
 	// Transaction endpoint
 	r.Post("/transaction", transactionHandler.HandleCreateTransaction)
+
+	// Create a protected route group
+	r.Group(func(r chi.Router) {
+		r.Use(httphandler.JWTMiddleware(jwtSecret))
+
+		// This endpoint will only be accessible with a valid JWT.
+		r.Get("/profile", func(w http.ResponseWriter, r *http.Request) {
+            userID := r.Context().Value(httphandler.UserContextKey)
+            w.Write([]byte("Your user ID is: " + userID.(string)))
+        })
+    })
 
 	srv := &http.Server{
 		Addr:    cfg.ServerPort,

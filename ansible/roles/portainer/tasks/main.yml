@@ -1,0 +1,17 @@
+# Portainer is a powerful and simple web interface for managing your Docker hosts. You can see all containers, their logs, restart them, manage networks and volumes via a browser (including mobile).
+- name: Create Portainer data volume
+  docker_volume:
+    name: portainer_data
+
+- name: Deploy Portainer container
+  community.docker.docker_container:
+    name: portainer
+    image: portainer/portainer-ce:latest
+    state: started
+    ports:
+      - "9443:9443" # Secure Port
+      - "8000:8000"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - portainer_data:/data
+    restart_policy: always   
