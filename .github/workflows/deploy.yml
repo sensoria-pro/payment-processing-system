@@ -14,7 +14,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        go: [1.24, 1.25]
+        go: [1.25]
     name: Build & Test
     steps:
       # 1. Download the source code of the repository
@@ -114,11 +114,44 @@ jobs:
             cd /opt/app
 
             # Create a .env file with secrets BEFORE launching
+            echo "APP_PORT=${{ secrets.PROD_APP_PORT }}" > .env
+            echo "SERVER_PORT=${{ secrets.PROD_SERVER_PORT }}" > .env
+            echo "ALERTER_SERVICE_PORT=${{ secrets.PROD_ALERTER_SERVICE_PORT }}" > .env
+            echo "LOG_LEVEL=${{ secrets.PROD_LOG_LEVEL }}" > .env
+
+            echo "DB_USER=${{ secrets.PROD_DB_USER }}" > .env
+            echo "DB_PASSWORD=${{ secrets.PROD_DB_PASSWORD }}" > .env
+            echo "DB_NAME=${{ secrets.PROD_DB_NAME }}" > .env
+            echo "PDB_HOST=${{ secrets.PROD_PDB_HOST }}" > .env
             echo "POSTGRES_DSN=${{ secrets.PROD_POSTGRES_DSN }}" > .env
+
+            echo "PGADMIN_EMAIL=${{ secrets.PROD_PGADMIN_EMAIL }}" > .env
+            echo "PGADMIN_PASSWORD=${{ secrets.PROD_PGADMIN_PASSWORD }}" > .env
+            echo "PGADMIN_PORT=${{ secrets.PROD_PGADMIN_PORT }}" > .env
+
             echo "KAFKA_BOOTSTRAP_SERVERS=${{ secrets.PROD_KAFKA_SERVERS }}" >> .env
+            echo "KAFKA_PORT=${{ secrets.PROD_KAFKA_PORT }}" >> .env
+
+            echo "ZOOKEEPER_CLIENT_PORT=${{ secrets.ZOOKEEPER_CLIENT_PORT }}" > .env
+            
             echo "REDIS_ADDR=${{ secrets.PROD_REDIS_ADDR }}" >> .env
+            echo "REDIS_PORT=${{ secrets.PROD_REDIS_PORT }}" > .env
+
+            echo "CLICKHOUSE_ADDR=${{ secrets.PROD_CLICKHOUSE_ADDR }}" > .env
+            echo "CLICKHOUSE_HTTP_PORT=${{ secrets.PROD_CLICKHOUSE_HTTP_PORT }}" > .env
+            echo "CLICKHOUSE_DB=${{ secrets.PROD_CLICKHOUSE_DB }}" > .env
+            echo "CLICKHOUSE_USER=${{ secrets.PROD_CLICKHOUSE_USER }}" > .env
+            echo "CLICKHOUSE_PASSWORD=${{ secrets.PROD_CLICKHOUSE_PASSWORD }}" > .env
+            echo "CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT=${{ secrets.PROD_CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT }}" > .env
+            
             echo "JWT_SECRET=${{ secrets.PROD_JWT_SECRET }}" >> .env
+            echo "PROMETHEUS_PORT=${{ secrets.PROD_PROMETHEUS_PORT }}" >> .env
+            echo "GRAFANA_PORT=${{ secrets.PROD_GRAFANA_PORT }}" >> .env
+            echo "JAEGER_PORT=${{ secrets.PROD_JAEGER_PORT }}" >> .env
+            echo "ALERTMANAGER_PORT=${{ secrets.PROD_ALERTMANAGER_PORT }}" >> .env
+
             echo "TELEGRAM_BOT_TOKEN=${{ secrets.PROD_TELEGRAM_BOT_TOKEN }}" >> .env
+            echo "TELEGRAM_CHAT_ID=${{ secrets.PROD_TELEGRAM_CHAT_ID }}" >> .env
 
             # Login to Docker Hub to download fresh images
             echo ${{ secrets.DOCKERHUB_TOKEN }} | docker login -u ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
