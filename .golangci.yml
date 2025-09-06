@@ -9,7 +9,7 @@ run:
     - test
     - scripts
   skip-files:
-    - ".*_test\.go$" # Ignore all files with _test.go
+     - ".*_test\\.go$" # Ignore all files with _test.go
 
   # Таймауты
   timeout: 5m
@@ -103,5 +103,3 @@ issues:
 new:
 # Include in PR only
   only-in-new-files: false
-  # Check only changed lines
-  diff: diff --no-prefix -u <(echo -n) <(git diff --cached -- '*.go')
