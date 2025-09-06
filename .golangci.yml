@@ -1,0 +1,107 @@
+run:
+# Work only within the module
+  modules-download-mode: readonly
+
+# In PR — check only changed files
+# In push/main — check everything
+  skip-dirs:
+    - tests
+    - test
+    - scripts
+  skip-files:
+    - ".*_test\.go$" # Ignore all files with _test.go
+
+  # Таймауты
+  timeout: 5m
+  deadline: 10m
+
+linters:
+# Enable only the necessary linters (faster and cleaner)
+  enable:
+    - govet
+    - errcheck
+    - staticcheck
+    - unused
+    - gosimple
+    - structcheck
+    - varcheck
+    - ineffassign
+    - deadcode
+    - typecheck
+    - misspell
+    - gosec
+    - prealloc
+    - unconvert
+    - gocritic
+    - gofmt
+    - goimports
+    - whitespace
+    - revive  # modern replacement for golint (deprecated)
+
+  # Disable unnecessary
+  disable-all: false
+  fast: false  # check all linters
+
+linters-settings:
+# Setting up gosec (security)
+  gosec:
+    excludes:
+    - G101 # Don't swear at "password" in strings (in tests/configs)
+    - G307 # Disable "deferring Close" check - not always needed
+
+# Revive setup (better than golint)
+  revive:
+    rules:
+      - name: blank-imports
+      - name: exported
+      - name: if-return
+      - name: var-naming
+      - name: indent-error-flow
+      - name: error-return
+      - name: arg-order
+    severity: warning
+
+# Setting up goimports
+  goimports:
+    local-prefixes: payment-processing-system
+
+# Setting up misspell
+  misspell:
+    locale: US
+    ignore-words:
+      - utilise  # if you use British English
+
+issues:
+# Do not add default exceptions
+  exclude-use-default: false
+
+# Ignore comments with //nolint
+  exclude:
+    - 'Error return value of .+ is not checked'
+
+# Minimum level of severity
+  severity: warning
+
+# Maximum number of errors
+  max-issues-per-linter: 50
+  max-same-issues: 10
+
+# Don't fall because of comments
+  exclude-rules:
+# Do not check comments in generated files
+    - path: _generated.go
+      linters:
+        - gosec
+
+# Do not check tests
+    - path: _test.go
+      linters:
+        - errcheck
+        - gosec
+
+# PR setting: check only changed files
+new:
+# Include in PR only
+  only-in-new-files: false
+  # Check only changed lines
+  diff: diff --no-prefix -u <(echo -n) <(git diff --cached -- '*.go')
