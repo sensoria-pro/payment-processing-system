@@ -77,7 +77,8 @@ jobs:
       # 1. Check dependencies in a Pull Request
       # This Action will fail the build if the PR adds a vulnerable dependency
       - name: Dependency Review
-        uses: actions/dependency-review-action@v4
+        if: github.event_name == 'pull_request'
+        uses: actions/dependency-review-action@v4  
 
       # 2. Scanning Docker images for vulnerabilities
       - name: Build image for scan
