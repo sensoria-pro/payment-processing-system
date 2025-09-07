@@ -64,6 +64,7 @@ jobs:
         uses: actions/checkout@v5
 
       - name: Dependency Review  # 1. Check dependencies at all
+        if: github.event_name == 'pull_request'
         uses: actions/dependency-review-action@v4
 
       - name: Build image for scan # 2. Scanning Docker images for vulnerabilities
