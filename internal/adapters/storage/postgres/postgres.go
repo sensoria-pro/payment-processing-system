@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/sensoria-pro/payment-processing-system/internal/core/domain"
+	"payment-processing-system/internal/core/domain"
 )
 
 //Repository is an implementation of the TransactionRepository port for PostgreSQL.

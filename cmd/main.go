@@ -15,12 +15,12 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/redis/go-redis/v9"
 
-	httphandler "github.com/sensoria-pro/payment-processing-system/internal/adapters/http"
-	"github.com/sensoria-pro/payment-processing-system/internal/adapters/messaging/kafka"
-	"github.com/sensoria-pro/payment-processing-system/internal/adapters/messaging/mock"
-	"github.com/sensoria-pro/payment-processing-system/internal/adapters/storage/postgres"
-	"github.com/sensoria-pro/payment-processing-system/internal/app"
-	"github.com/sensoria-pro/payment-processing-system/internal/config"
+	httphandler "payment-processing-system/internal/adapters/http"
+	"payment-processing-system/internal/adapters/messaging/kafka"
+	"internal/adapters/messaging/mock"
+	"payment-processing-system/internal/adapters/storage/postgres"
+	"payment-processing-system/internal/app"
+	"payment-processing-system/internal/config"
 )
 
 func main() {
@@ -88,10 +88,15 @@ func main() {
 
 		// This endpoint will only be accessible with a valid JWT.
 		r.Get("/profile", func(w http.ResponseWriter, r *http.Request) {
-            userID := r.Context().Value(httphandler.UserContextKey)
-            w.Write([]byte("Your user ID is: " + userID.(string)))
-        })
-    })
+			userIDRaw := r.Context().Value("userID")
+			userID, ok := userIDRaw.(string)
+			if !ok || userID == "" {
+				http.Error(w, "Не удалось получить идентификатор пользователя", http.StatusUnauthorized)
+				return
+			}
+			w.Write([]byte("Ваш user ID: " + userID))
+		})
+	})
 
 	srv := &http.Server{
 		Addr:    cfg.ServerPort,

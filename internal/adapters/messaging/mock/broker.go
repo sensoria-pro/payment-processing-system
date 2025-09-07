@@ -3,7 +3,7 @@ package mock
 import (
 	"context"
 	"fmt"
-	"github.com/sensoria-pro/payment-processing-system/internal/core/domain"
+	"payment-processing-system/internal/core/domain"
 )
 
 //Broker - stub for MessageBroker

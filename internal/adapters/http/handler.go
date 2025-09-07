@@ -5,7 +5,7 @@ import (
 	"net/http"
 
 	"github.com/google/uuid"
-	"github.com/sensoria-pro/payment-processing-system/internal/core/ports"
+	"payment-processing-system/internal/core/ports"
 )
 
 type TransactionHandler struct {

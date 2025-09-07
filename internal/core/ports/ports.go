@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/google/uuid"
-	"github.com/sensoria-pro/payment-processing-system/internal/core/domain"
+	"payment-processing-system/internal/core/domain"
 )
 
 // TransactionRepository is an "outgoing port". It defines WHAT we want to do with the repository, but not HOW.

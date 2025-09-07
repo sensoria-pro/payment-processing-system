@@ -8,8 +8,8 @@ import (
 	"errors"
 
 	"github.com/google/uuid"
-	"github.com/sensoria-pro/payment-processing-system/internal/core/domain"
-	"github.com/sensoria-pro/payment-processing-system/internal/core/ports"
+	"payment-processing-system/internal/core/domain"
+	"payment-processing-system/internal/core/ports"
 )
 
 // service is the implementation of the TransactionService port

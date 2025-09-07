@@ -8,8 +8,8 @@ import (
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"github.com/sensoria-pro/payment-processing-system/internal/core/domain"
-	"github.com/sensoria-pro/payment-processing-system/internal/core/ports"
+	"payment-processing-system/internal/core/domain"
+	_ "payment-processing-system/internal/core/ports"
 )
 
 // Mock - implementation of the repository

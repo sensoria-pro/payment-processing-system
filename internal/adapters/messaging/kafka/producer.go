@@ -6,7 +6,7 @@ import (
 	"fmt"
 
 	"github.com/confluentinc/confluent-kafka-go/v2/kafka"
-	"github.com/sensoria-pro/payment-processing-system/internal/core/domain"
+	"payment-processing-system/internal/core/domain"
 	//TODO: Нужен логгер, пока просто воспользуемся стандартным
 	"log" 
 )

@@ -3,7 +3,7 @@ syntax = "proto3";
 package transactions.v1;
 
 // Option for Go to ensure that generated code is in the correct package.
-option go_package = "github.com/sensoria-pro/payment-processing-system/gen/go/proto/v1;transactionsv1";
+option go_package = "payment-processing-system/gen/go/proto/v1;transactionsv1";
 
 import "google/protobuf/timestamp.proto";
 
