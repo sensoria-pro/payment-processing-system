@@ -1,7 +1,7 @@
 server_port: ':8080'
 
 postgres:
-  dsn: '${POSTGRES_DSN:-postgres://postgres:password@localhost:5432/payment_gateway?sslmode=disable}'
+  dsn: '${POSTGRES_DSN:-postgres://postgres:password_local_dev@postgres:5432/payment_processing_system?sslmode=disable}'
 
 kafka:
   bootstrap_servers: '${KAFKA_BOOTSTRAP_SERVERS:-localhost:9092}'

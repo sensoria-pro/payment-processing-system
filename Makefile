@@ -5,15 +5,15 @@ ifneq (,$(wildcard .env))
 endif
 
 # Переменные для подключения к базе данных (с fallback значениями)
-DB_HOST ?= localhost
-DB_PORT ?= 5432
-DB_USER ?= postgres
-DB_PASSWORD ?= password
-DB_NAME ?= payment_system
+POSTGRES_HOST ?= localhost
+POSTGRES_PORT ?= 5432
+POSTGRES_USER ?= postgres
+POSTGRES_PASSWORD ?= password
+POSTGRES_DB ?= payment_system
 DB_SSL_MODE ?= disable
 
 # Строка подключения к базе данных
-DATABASE_URL = postgres://$(DB_USER):$(DB_PASSWORD)@$(DB_HOST):$(DB_PORT)/$(DB_NAME)?sslmode=$(DB_SSL_MODE)
+DATABASE_URL = postgres://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@$(POSTGRES_HOST):$(POSTGRES_PORT)/$(POSTGRES_DB)?sslmode=$(DB_SSL_MODE)
 
 # Путь к миграциям
 MIGRATIONS_PATH = migrations_postgres
@@ -26,9 +26,9 @@ help: ## Показать справку
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' Makefile | sort | awk -F ':.*## ' '{printf "make %-20s - %s\n", $$1, $$2}'
 
 migrate-up: ## Применить все миграции
-	@if [ "$(DB_PASSWORD)" = "password" ]; then \
+	@if [ "$(POSTGRES_PASSWORD)" = "password" ]; then \
         echo "❌ Опасность: используется пароль по умолчанию 'password'"; \
-        echo "💡 Установите DB_PASSWORD в .env или через export"; \
+        echo "💡 Установите POSTGRES_PASSWORDD в .env или через export"; \
         exit 1; \
     fi
     @echo "Применение миграций..."
@@ -124,7 +124,7 @@ dev-docker: ## Полная настройка окружения с Docker
 
 wait-for-db: ## Ждать готовности PostgreSQL
     @echo "Ожидание готовности PostgreSQL..."
-    @until docker exec -i postgres-db pg_isready -U $(DB_USER) -d $(DB_NAME); do \
+    @until docker exec -i postgres-db pg_isready -U $(POSTGRES_USER) -d $(POSTGRES_DB); do \
         echo "⏳ PostgreSQL недоступен, ждём..."; \
         sleep 2; \
     done
@@ -139,13 +139,13 @@ dev-setup: ## Настройка окружения для разработки
     @echo "Ожидание готовности PostgreSQL..."
     $(MAKE) wait-for-db
     @echo "Создание базы данных..."
-    docker exec -i postgres-db createdb -U $(DB_USER) $(DB_NAME) || echo "База уже существует"
+    docker exec -i postgres-db createdb -U $(POSTGRES_USER) $(POSTGRES_DB) || echo "База уже существует"
     $(MAKE) migrate-up
 
 dev-reset: ## Сброс базы данных для разработки
 	@echo "Сброс базы данных..."
-	dropdb $(DB_NAME) 2>/dev/null || echo "База данных не существует"
-	createdb $(DB_NAME)
+	dropdb $(POSTGRES_DB) 2>/dev/null || echo "База данных не существует"
+	createdb $(POSTGRES_DB)
 	$(MAKE) migrate-up
 
 # Команды для всех сервисов

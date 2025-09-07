@@ -61,11 +61,11 @@ make migrate-force VERSION=2
 Вы можете настроить подключение к базе данных через переменные:
 
 ```bash
-export DB_HOST=localhost
-export DB_PORT=5432
-export DB_USER=postgres
-export DB_PASSWORD=your_password
-export DB_NAME=payment_gateway
+export POSTGRES_HOST=localhost
+export POSTGRES_PORT=5432
+export POSTGRES_USER=postgres
+export POSTGRES_PASSWORD=your_password
+export POSTGRES_DB=payment_gateway
 export DB_SSL_MODE=disable
 ```
 

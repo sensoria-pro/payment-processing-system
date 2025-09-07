@@ -1,47 +1,35 @@
+# Triggers: run on push to the main branch and on Pull Request in main
 name: Main CI/CD Pipeline
 
-# Triggers: run on push to the main branch and on Pull Request in main
 on:
   push:
-    branches: [main]
+    branches: [ main ]
   pull_request:
-    branches: [main]
+    branches: [ main ]
 
 jobs:
   # --- JOB 1: Build and Test ---
   # This job is the core job. It tests the code and builds Docker images.
   build-and-test:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        go: [1.25]
-    name: Build & Test
     steps:
-      # 1. Download the source code of the repository
-      - name: Checkout code
+      - name: Checkout code # 1. Download the source code of the repository
         uses: actions/checkout@v5
 
-      # 2. Setting up the Go environment
-      - name: Set up Go
+      - name: Set up Go # 2. Setting up the Go environment
         uses: actions/setup-go@v5
         with:
-          go-version: ${{ matrix.go }}
-      # 3. Run the linter (code style check)
-      - name: golangci-lint
-        uses: golangci/golangci-lint-action@v8
-        with:
-          version: v2.1.6    
-      - run: go test -race -coverprofile=coverage.txt -covermode=atomic ./...
-     
-      - name: Run Linter
-        run: make lint
+          go-version: '1.24'
 
-      # 4. Run tests
-      - name: Run Tests
-        run: make test
+      - name: Run Linter (golangci-lint) # 3. Run the linter (code style check)
+        uses: golangci/golangci-lint-action@v6
 
-      # 5. Login to Docker Hub to publish images
-      - name: Login to Docker Hub
+
+      - name: Run Tests # 4. Run tests
+        run: go test -race -coverprofile=coverage.txt -covermode=atomic ./...
+
+
+      - name: Login to Docker Hub # 5. Login to Docker Hub
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         uses: docker/login-action@v3
         with:
@@ -65,26 +53,23 @@ jobs:
           file: ./Dockerfile.antifraud
           push: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
           tags: tonygilman/anti-fraud-analyzer:latest
+  
 
-    # --- JOB 2: Security Scan ---
-    # This job runs in parallel with build-and-test to save time.
+  # --- JOB 2: Security Scan ---
+  # This job runs in parallel with build-and-test to save time.
   security-scan:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
 
-      # 1. Check dependencies in a Pull Request
-      # This Action will fail the build if the PR adds a vulnerable dependency
-      - name: Dependency Review
-        if: github.event_name == 'pull_request'
-        uses: actions/dependency-review-action@v4  
+      - name: Dependency Review  # 1. Check dependencies at all
+        uses: actions/dependency-review-action@v4
 
-      # 2. Scanning Docker images for vulnerabilities
-      - name: Build image for scan
+      - name: Build image for scan # 2. Scanning Docker images for vulnerabilities
         run: docker build -t temp-gateway-image -f ./Dockerfile .
-      
-      - name: Scan image with Trivy
+
+      - name: Scan image with Trivy # 3. Scanning Docker images for vulnerabilities
         uses: aquasecurity/trivy-action@master
         with:
           image-ref: 'temp-gateway-image'
@@ -92,71 +77,29 @@ jobs:
           exit-code: '1'
           ignore-unfixed: true
           severity: 'HIGH,CRITICAL'
-    
 
-    # --- JOB 3: Deploy ---
-    # This job is only run after 'build-and-test' has completed successfully
+  # --- JOB 3: Deploy ---
+  # This job is only run after 'build-and-test' has completed successfully
   deploy:
     runs-on: ubuntu-latest
-    needs: [build-and-test, security-scan]
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main' # Запускаем только при пуше в main
-    environment: production
-    timeout-minutes: 15
+    needs: [build-and-test, security-scan]  # Wait for build-and-test and security-scan to complete
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
 
     steps:
       - name: Deploy to Production Server
-        uses: appleboy/ssh-action@v1.2.2
+        uses: appleboy/ssh-action@v1.2.2 # 1. Deploy to Production Server
         with:
           host: ${{ secrets.PROD_SERVER_HOST }}
           username: ${{ secrets.PROD_SERVER_USERNAME }}
           key: ${{ secrets.PROD_SERVER_SSH_KEY }}
           script: |
-            # Go to the working directory on the server
             cd /opt/app
-
+            
             # Create a .env file with secrets BEFORE launching
-            echo "APP_PORT=${{ secrets.PROD_APP_PORT }}" > .env
-            echo "SERVER_PORT=${{ secrets.PROD_SERVER_PORT }}" >> .env
-            echo "ALERTER_SERVICE_PORT=${{ secrets.PROD_ALERTER_SERVICE_PORT }}" >> .env
-            echo "LOG_LEVEL=${{ secrets.PROD_LOG_LEVEL }}" >> .env
-
-            echo "DB_USER=${{ secrets.PROD_DB_USER }}" >> .env
-            echo "DB_PASSWORD=${{ secrets.PROD_DB_PASSWORD }}" >> .env
-            echo "DB_NAME=${{ secrets.PROD_DB_NAME }}" >> .env
-            echo "PDB_HOST=${{ secrets.PROD_PDB_HOST }}" >> .env
-            echo "POSTGRES_DSN=${{ secrets.PROD_POSTGRES_DSN }}" >> .env
-
-            echo "PGADMIN_EMAIL=${{ secrets.PROD_PGADMIN_EMAIL }}" >> .env
-            echo "PGADMIN_PASSWORD=${{ secrets.PROD_PGADMIN_PASSWORD }}" >> .env
-            echo "PGADMIN_PORT=${{ secrets.PROD_PGADMIN_PORT }}" >> .env
-
-            echo "KAFKA_BOOTSTRAP_SERVERS=${{ secrets.PROD_KAFKA_SERVERS }}" >> .env
-            echo "KAFKA_PORT=${{ secrets.PROD_KAFKA_PORT }}" >> .env
-
-            echo "ZOOKEEPER_CLIENT_PORT=${{ secrets.ZOOKEEPER_CLIENT_PORT }}" >> .env
-            
-            echo "REDIS_ADDR=${{ secrets.PROD_REDIS_ADDR }}" >> .env
-            echo "REDIS_PORT=${{ secrets.PROD_REDIS_PORT }}" >> .env
-
-            echo "CLICKHOUSE_ADDR=${{ secrets.PROD_CLICKHOUSE_ADDR }}" >> .env
-            echo "CLICKHOUSE_HTTP_PORT=${{ secrets.PROD_CLICKHOUSE_HTTP_PORT }}" >> .env
-            echo "CLICKHOUSE_DB=${{ secrets.PROD_CLICKHOUSE_DB }}" >> .env
-            echo "CLICKHOUSE_USER=${{ secrets.PROD_CLICKHOUSE_USER }}" >> .env
-            echo "CLICKHOUSE_PASSWORD=${{ secrets.PROD_CLICKHOUSE_PASSWORD }}" >> .env
-            echo "CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT=${{ secrets.PROD_CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT }}" >> .env
-            
-            echo "JWT_SECRET=${{ secrets.PROD_JWT_SECRET }}" >> .env
-            echo "PROMETHEUS_PORT=${{ secrets.PROD_PROMETHEUS_PORT }}" >> .env
-            echo "GRAFANA_PORT=${{ secrets.PROD_GRAFANA_PORT }}" >> .env
-            echo "JAEGER_PORT=${{ secrets.PROD_JAEGER_PORT }}" >> .env
-            echo "ALERTMANAGER_PORT=${{ secrets.PROD_ALERTMANAGER_PORT }}" >> .env
-
-            echo "TELEGRAM_BOT_TOKEN=${{ secrets.PROD_TELEGRAM_BOT_TOKEN }}" >> .env
-            echo "TELEGRAM_CHAT_ID=${{ secrets.PROD_TELEGRAM_CHAT_ID }}" >> .env
-
+            echo "${{ secrets.PROD_ENV_FILE }}" > .env
             # Login to Docker Hub to download fresh images
             echo ${{ secrets.DOCKERHUB_TOKEN }} | docker login -u ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
-
+            
             # Download the latest versions of the images that we just published
             docker-compose pull
 

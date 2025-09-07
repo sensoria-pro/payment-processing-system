@@ -9,7 +9,7 @@ run:
     - test
     - scripts
   skip-files:
-     - ".*_test\\.go$" # Ignore all files with _test.go
+     - "*_test.go" # Ignore all files with _test.go
 
   # Таймауты
   timeout: 5m
