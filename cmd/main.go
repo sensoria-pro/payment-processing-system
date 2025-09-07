@@ -16,8 +16,8 @@ import (
 	"github.com/redis/go-redis/v9"
 
 	httphandler "payment-processing-system/internal/adapters/http"
-	"payment-processing-system/internal/adapters/messaging/kafka"
-	"internal/adapters/messaging/mock"
+	_"payment-processing-system/internal/adapters/messaging/kafka"
+	"payment-processing-system/internal/adapters/messaging/mock"
 	"payment-processing-system/internal/adapters/storage/postgres"
 	"payment-processing-system/internal/app"
 	"payment-processing-system/internal/config"
