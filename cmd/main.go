@@ -16,7 +16,7 @@ import (
 	"github.com/redis/go-redis/v9"
 
 	httphandler "payment-processing-system/internal/adapters/http"
-	_"payment-processing-system/internal/adapters/messaging/kafka"
+	_ "payment-processing-system/internal/adapters/messaging/kafka"
 	"payment-processing-system/internal/adapters/messaging/mock"
 	"payment-processing-system/internal/adapters/storage/postgres"
 	"payment-processing-system/internal/app"
@@ -25,10 +25,8 @@ import (
 
 func main() {
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
-	// TODO: Секрет для JWT. В проде - из Vault/KMS!
-    jwtSecret := []byte("test-very-secret-key")
-	
-	
+	jwtSecret := os.Getenv("JWT_SECRET")
+
 	cfg, err := config.Load("configs/config.yaml")
 	if err != nil {
 		logger.Error("failed to load config", "error", err)
@@ -45,7 +43,8 @@ func main() {
 		logger.Error("failed to connect to postgres", "error", err)
 		os.Exit(1)
 	}
-	defer repo.Close()
+	defer repo.Close();
+
 	logger.Info("successfully connected to postgres")
 
 	// Create a Kafka producer
@@ -58,7 +57,11 @@ func main() {
 		logger.Error("failed to create kafka broker", "error", err)
 		os.Exit(1)
 	}
-	defer broker.Close()
+	defer func() {
+		if closeErr := broker.Close(); closeErr != nil {
+			logger.Error("failed to close kafka broker", "error", closeErr)
+		}
+	}()
 	logger.Info("kafka broker created")
 
 	// Dependency Injection: "Injecting" adapters into the kernel
@@ -67,7 +70,11 @@ func main() {
 
 	// Initializing the Redis client
 	rdb := redis.NewClient(&redis.Options{Addr: cfg.Redis.Addr})
-	defer rdb.Close()
+	defer func() {
+		if closeErr := rdb.Close(); closeErr != nil {
+			logger.Error("failed to close redis connection", "error", closeErr)
+		}
+	}()
 
 	// Setting up and running an HTTP server
 	r := chi.NewRouter()
@@ -75,16 +82,18 @@ func main() {
 	r.Use(middleware.Recoverer)
 
 	// Health check endpoint
-	r.Get("/health", func(w http.ResponseWriter, r *http.Request) {
+	r.Get("/health", func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`{"status": "healthy", "service": "payment-gateway"}`))
+		if _, writeErr := w.Write([]byte(`{"status": "healthy", "service": "payment-gateway"}`)); writeErr != nil {
+			logger.Error("failed to write health response", "error", writeErr)
+		}
 	})
 	// Transaction endpoint
 	r.Post("/transaction", transactionHandler.HandleCreateTransaction)
 
 	// Create a protected route group
 	r.Group(func(r chi.Router) {
-		r.Use(httphandler.JWTMiddleware(jwtSecret))
+		r.Use(httphandler.JWTMiddleware([]byte(jwtSecret)))
 
 		// This endpoint will only be accessible with a valid JWT.
 		r.Get("/profile", func(w http.ResponseWriter, r *http.Request) {
@@ -94,7 +103,9 @@ func main() {
 				http.Error(w, "Не удалось получить идентификатор пользователя", http.StatusUnauthorized)
 				return
 			}
-			w.Write([]byte("Ваш user ID: " + userID))
+			if _, writeErr := w.Write([]byte("Ваш user ID: " + userID)); writeErr != nil {
+				logger.Error("failed to write profile response", "error", writeErr)
+			}
 		})
 	})
 
