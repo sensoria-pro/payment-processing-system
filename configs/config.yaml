@@ -9,3 +9,8 @@ kafka:
 
 redis:
   addr: '${REDIS_ADDR:-localhost:6379}'
+
+anti_fraud:
+  amount_threshold: 1000.0  #TODO: Порог по сумме
+  frequency_threshold: 3      # Порог по количеству транзакций
+  frequency_window_seconds: 60 # Временное окно для подсчета (в секундах)
