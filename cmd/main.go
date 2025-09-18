@@ -13,53 +13,103 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/redis/go-redis/v9"
 
+	"payment-processing-system/internal/adapters/authz/opa"
 	httphandler "payment-processing-system/internal/adapters/http"
-	_ "payment-processing-system/internal/adapters/messaging/kafka"
-	"payment-processing-system/internal/adapters/messaging/mock"
+	"payment-processing-system/internal/adapters/messaging/kafka"
+	_ "payment-processing-system/internal/adapters/messaging/mock"
 	"payment-processing-system/internal/adapters/storage/postgres"
+	"payment-processing-system/internal/adapters/storage/redis"
 	"payment-processing-system/internal/app"
 	"payment-processing-system/internal/config"
+	"payment-processing-system/internal/observability"
 )
 
 func main() {
-	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
-	jwtSecret := os.Getenv("JWT_SECRET")
-
+	// --- 1. Configuration and Logging ---
 	cfg, err := config.Load("configs/config.yaml")
 	if err != nil {
-		logger.Error("failed to load config", "error", err)
+		logger.Error("Failed to load config", "error", err)
 		os.Exit(1)
 	}
 
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	logger := observability.SetupLogger(cfg.App.Env)
+	logger.Info("The application is launched", "env", cfg.App.Env)
+
+	//logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
+
+	jwtSecret := os.Getenv("JWT_SECRET")
+
+	// --- 2. Setting up Observability ---
+	shutdownTracer, err := observability.InitTracer(cfg.Jaeger.URL, "payment-gateway")
+	if err != nil {
+		logger.Error("Failed to initialize tracing", "error", err)
+		os.Exit(1)
+	}
+	defer shutdownTracer(context.Background())
+
+	// --- 3. Security Settings ---
+	oidcAuthenticator, err := httphandler.NewOIDCAuthenticator(
+		context.Background(),
+		cfg.OIDC.URL,
+		cfg.OIDC.ClientID,
+	)
+	if err != nil {
+		logger.Errorf("Failed to create OIDC authenticator with URL=%s and ClientID=%s: %v", cfg.OIDC.URL, cfg.OIDC.ClientID, err)
+		os.Exit(1)
+	}
+
+	opaMiddleware := opa.NewMiddleware(cfg.OPA.URL, logger)
 
 	// Creating Adapters
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 	// Connecting to PostgreSQL
 	repo, err := postgres.NewRepository(ctx, cfg.Postgres.DSN)
 	if err != nil {
 		logger.Error("failed to connect to postgres", "error", err)
 		os.Exit(1)
 	}
-	defer repo.Close();
+	// Deferred block for closing PostgreSQL repository
+	defer func() {
+		if closeErr := repo.Close(); closeErr != nil {
+			logger.Error("Failed to close PostgreSQL connection", "error", closeErr)
+		}
+	}()
 
 	logger.Info("successfully connected to postgres")
 
+	// Initializing the Redis client
+	redisClient := redis.NewClient(&redis.Options{Addr: cfg.Redis.Addr})
+	// Check the connection to Redis
+
+	if _, err := redisClient.Ping(context.Background()).Result(); err != nil {
+		logger.Error("Failed to connect to Redis", "error", err)
+		os.Exit(1)
+	}
+	defer func() {
+		if closeErr := redisClient.Close(); closeErr != nil {
+			logger.Error("Failed to close redis connection", "error", closeErr)
+		}
+	}()
+	logger.Info("successfully connected to redis - redisClient")
+
 	// Create a Kafka producer
 	//TODO: закомментировать для локальной версии тестов
-	//broker, err := kafka.NewBroker(cfg.Kafka.BootstrapServers, cfg.Kafka.Topic)
+	broker, err := kafka.NewBroker(cfg.Kafka.BootstrapServers, cfg.Kafka.Topic)
 
 	//TODO: Создаем заглушку для Kafka (для локальной разработки)
-	broker, err := mock.NewBroker(cfg.Kafka.BootstrapServers, cfg.Kafka.Topic)
+	//broker, err := mock.NewBroker(cfg.Kafka.BootstrapServers, cfg.Kafka.Topic)
 	if err != nil {
-		logger.Error("failed to create kafka broker", "error", err)
+		logger.Error("Failed to create kafka broker", "error", err)
 		os.Exit(1)
 	}
 	defer func() {
 		if closeErr := broker.Close(); closeErr != nil {
-			logger.Error("failed to close kafka broker", "error", closeErr)
+			logger.Error("Failed to close kafka broker", "error", closeErr)
 		}
 	}()
 	logger.Info("kafka broker created")
@@ -68,28 +118,33 @@ func main() {
 	transactionService := app.NewTransactionService(repo, broker)
 	transactionHandler := httphandler.NewTransactionHandler(transactionService)
 
-	// Initializing the Redis client
-	rdb := redis.NewClient(&redis.Options{Addr: cfg.Redis.Addr})
-	defer func() {
-		if closeErr := rdb.Close(); closeErr != nil {
-			logger.Error("failed to close redis connection", "error", closeErr)
-		}
-	}()
-
 	// Setting up and running an HTTP server
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
+	r.Use(middleware.RequestID)
+	r.Use(middleware.RealIP)
+	r.Use(observability.NewLoggerMiddleware(logger))
+	r.Use(middleware.Recoverer)
+	r.Use(observability.NewMetricsMiddleware("payment-gateway"))
+	r.Use(observability.NewTracingMiddleware("payment-gateway"))
 
 	// Health check endpoint
 	r.Get("/health", func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		if _, writeErr := w.Write([]byte(`{"status": "healthy", "service": "payment-gateway"}`)); writeErr != nil {
-			logger.Error("failed to write health response", "error", writeErr)
+			logger.Error("Failed to write health response", "error", writeErr)
 		}
 	})
 	// Transaction endpoint
-	r.Post("/transaction", transactionHandler.HandleCreateTransaction)
+	//r.Post("/transaction", transactionHandler.HandleCreateTransaction)
+
+	r.Handle("/metrics", promhttp.Handler())
+	r.Route("/api/v1", func(r chi.Router) {
+		r.Use(oidcAuthenticator.Middleware)
+		r.Use(opaMiddleware.Authorize)
+		r.Post("/transactions", transactionHandler.HandleCreateTransaction)
+	})
 
 	// Create a protected route group
 	r.Group(func(r chi.Router) {
@@ -100,21 +155,24 @@ func main() {
 			userIDRaw := r.Context().Value("userID")
 			userID, ok := userIDRaw.(string)
 			if !ok || userID == "" {
-				http.Error(w, "Не удалось получить идентификатор пользователя", http.StatusUnauthorized)
+				http.Error(w, "Failed to get user ID", http.StatusUnauthorized)
 				return
 			}
-			if _, writeErr := w.Write([]byte("Ваш user ID: " + userID)); writeErr != nil {
-				logger.Error("failed to write profile response", "error", writeErr)
+			if _, writeErr := w.Write([]byte("Your user ID: " + userID)); writeErr != nil {
+				logger.Error("Failed to write profile response", "error", writeErr)
 			}
 		})
 	})
 
+	// Graceful Shutdown
 	srv := &http.Server{
-		Addr:    cfg.ServerPort,
-		Handler: r,
+		Addr:         cfg.ServerPort,
+		Handler:      r,
+		ReadTimeout:  5 * time.Second,
+		WriteTimeout: 10 * time.Second,
+		IdleTimeout:  120 * time.Second,
 	}
 
-	// Graceful Shutdown
 	wg := sync.WaitGroup{}
 	wg.Add(1)
 	go func() {
