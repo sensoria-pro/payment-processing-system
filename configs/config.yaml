@@ -1,4 +1,8 @@
-server_port: ':8080'
+app: 
+  env: ''
+
+server: 
+  port: '${APP_PORT}'  
 
 postgres:
   dsn: '${POSTGRES_DSN:-postgres://postgres:password_local_dev@postgres:5432/payment_processing_system?sslmode=disable}'
@@ -8,7 +12,18 @@ kafka:
   topic: 'transactions.created'
 
 redis:
-  addr: '${REDIS_ADDR:-localhost:6379}'
+  addr: '${REDIS_ADDR}'
+
+jaeger:
+  port: '${JAEGER_PORT}'
+  port_grpc: '${JAEGER_PORT_GRPC}'
+
+oidc:
+  url: '${OIDC_URL}'
+  client_id: '${OIDC_CLIENT_ID}'  
+
+opa:
+  url: '${OPA_URL}'  
 
 anti_fraud:
   amount_threshold: 1000.0  #TODO: Порог по сумме

@@ -5,15 +5,21 @@ import (
 	"os"
 	"gopkg.in/yaml.v3"
 )
+// AntiFraudConfig stores parameters for the rules engine.
 type AntiFraudConfig struct {
-	AmountThreshold string `yaml:"amount_threshold"`
-	FrequencyThreshold   string `yaml:"frequency_threshold"`
-	FrequencyWindowSeconds   string `yaml:"frequency_window_seconds"`
+	AmountThreshold        float64 `yaml:"amount_threshold"`
+	FrequencyThreshold     int     `yaml:"frequency_threshold"`
+	FrequencyWindowSeconds int     `yaml:"frequency_window_seconds"`
 }
 
 type Config struct {
-	ServerPort string `yaml:"server_port"`
-	Postgres   struct {
+	App struct {
+		Env string `yaml:"env"`
+	} `yaml:"app"`
+	Server struct {
+		Port string `yaml:"port"`
+	} `yaml:"server"`
+	Postgres struct {
 		DSN string `yaml:"dsn"`
 	} `yaml:"postgres"`
 	Kafka struct {
@@ -23,6 +29,17 @@ type Config struct {
 	Redis struct {
 		Addr string `yaml:"addr"`
 	} `yaml:"redis"`
+	Jaeger struct {
+		Port string `yaml:"port"`
+		PortGrpc string `yaml:"port_grpc"`
+	} `yaml:"jaeger"`
+	OIDC struct {
+		URL      string `yaml:"url"`
+		ClientID string `yaml:"client_id"`
+	} `yaml:"oidc"`
+	OPA struct {
+		URL string `yaml:"url"`
+	} `yaml:"opa"`
 	AntiFraud AntiFraudConfig `yaml:"anti_fraud"`
 }
 
@@ -33,6 +50,8 @@ func Load(configPath string) (*Config, error) {
 	if err != nil {
 		return nil, fmt.Errorf("error reading config file: %w", err)
 	}
+
+	// First, we substitute environment variables into the raw YAML file.
 	expandedFile := os.ExpandEnv(string(file))
 
 	err = yaml.Unmarshal([]byte(expandedFile), config)
@@ -41,7 +60,7 @@ func Load(configPath string) (*Config, error) {
 	}
 
 	return config, nil
-	
+
 	// Replace environment variables in the configuration
 	// config.ServerPort = expandEnv(config.ServerPort)
 	// config.Postgres.DSN = expandEnv(config.Postgres.DSN)

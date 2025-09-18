@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"log/slog"
 	"net/http"
 	"os"
 	"os/signal"
@@ -14,9 +13,8 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"github.com/redis/go-redis/v9"
 
-	"payment-processing-system/internal/adapters/authz/opa"
+	"payment-processing-system/internal/adapters/auth/opa"
 	httphandler "payment-processing-system/internal/adapters/http"
 	"payment-processing-system/internal/adapters/messaging/kafka"
 	_ "payment-processing-system/internal/adapters/messaging/mock"
@@ -30,20 +28,17 @@ import (
 func main() {
 	// --- 1. Configuration and Logging ---
 	cfg, err := config.Load("configs/config.yaml")
+	logger := observability.SetupLogger(cfg.App.Env)
+	logger.Info("The application is launched", "env", cfg.App.Env)
 	if err != nil {
 		logger.Error("Failed to load config", "error", err)
 		os.Exit(1)
 	}
 
-	logger := observability.SetupLogger(cfg.App.Env)
-	logger.Info("The application is launched", "env", cfg.App.Env)
-
-	//logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
-
 	jwtSecret := os.Getenv("JWT_SECRET")
 
 	// --- 2. Setting up Observability ---
-	shutdownTracer, err := observability.InitTracer(cfg.Jaeger.URL, "payment-gateway")
+	shutdownTracer, err := observability.InitTracer(cfg.Jaeger.Port, "payment-gateway")
 	if err != nil {
 		logger.Error("Failed to initialize tracing", "error", err)
 		os.Exit(1)
@@ -57,7 +52,7 @@ func main() {
 		cfg.OIDC.ClientID,
 	)
 	if err != nil {
-		logger.Errorf("Failed to create OIDC authenticator with URL=%s and ClientID=%s: %v", cfg.OIDC.URL, cfg.OIDC.ClientID, err)
+		logger.Error("Failed to create OIDC authenticator", "url", cfg.OIDC.URL, "client_id", cfg.OIDC.ClientID, "error", err)
 		os.Exit(1)
 	}
 
@@ -74,16 +69,12 @@ func main() {
 		os.Exit(1)
 	}
 	// Deferred block for closing PostgreSQL repository
-	defer func() {
-		if closeErr := repo.Close(); closeErr != nil {
-			logger.Error("Failed to close PostgreSQL connection", "error", closeErr)
-		}
-	}()
+	defer repo.Close()
 
 	logger.Info("successfully connected to postgres")
 
 	// Initializing the Redis client
-	redisClient := redis.NewClient(&redis.Options{Addr: cfg.Redis.Addr})
+	redisClient, err := redis.NewClient(cfg.Redis.Addr)
 	// Check the connection to Redis
 
 	if _, err := redisClient.Ping(context.Background()).Result(); err != nil {
@@ -107,11 +98,7 @@ func main() {
 		logger.Error("Failed to create kafka broker", "error", err)
 		os.Exit(1)
 	}
-	defer func() {
-		if closeErr := broker.Close(); closeErr != nil {
-			logger.Error("Failed to close kafka broker", "error", closeErr)
-		}
-	}()
+	defer broker.Close()
 	logger.Info("kafka broker created")
 
 	// Dependency Injection: "Injecting" adapters into the kernel
@@ -166,7 +153,7 @@ func main() {
 
 	// Graceful Shutdown
 	srv := &http.Server{
-		Addr:         cfg.ServerPort,
+		Addr:         cfg.Server.Port,
 		Handler:      r,
 		ReadTimeout:  5 * time.Second,
 		WriteTimeout: 10 * time.Second,
@@ -177,7 +164,7 @@ func main() {
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		logger.Info("starting server", "port", cfg.ServerPort)
+		logger.Info("starting server", "port", cfg.Server.Port)
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			logger.Error("server failed to start", "error", err)
 			os.Exit(1)

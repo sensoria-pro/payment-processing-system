@@ -1,13 +1,9 @@
-// internal/antifraud/caching_engine.go
-
-// Package antifraud contains implementations (adapters) of the FraudRuleEngine interface.
 package antifraud
 
 import (
 	"context"
 	"fmt"
 	"log"
-	"strconv"
 	"time"
 
 	"github.com/redis/go-redis/v9"
@@ -33,11 +29,7 @@ func (e *CachingRuleEngine) CheckTransaction(tx domain.Transaction) domain.Fraud
 	ctx := context.Background()
 
 	// Rule 1: Transaction amount exceeds a simple threshold.  (TODO: default < 1000)
-	amountThreshold, err := strconv.ParseFloat(e.cfg.AmountThreshold, 64)
-	if err != nil {
-		log.Printf("ERROR: Не удалось преобразовать AmountThreshold: %v", err)
-		return domain.FraudResult{}
-	}
+	amountThreshold := e.cfg.AmountThreshold
 	if tx.Amount > amountThreshold {
 		return domain.FraudResult{IsFraudulent: true, Reason: "Amount exceeds threshold"}
 	}
@@ -54,20 +46,12 @@ func (e *CachingRuleEngine) CheckTransaction(tx domain.Transaction) domain.Fraud
 
 	if count == 1 {
 		// Set the lifetime of the key from the config (TODO: default - 60 second)
-		freqWindowSec, err := strconv.ParseInt(e.cfg.FrequencyWindowSeconds, 10, 64)
-		if err != nil {
-			log.Printf("ERROR: Failed to parse FrequencyWindowSeconds: %v", err)
-			return domain.FraudResult{}
-		}
+		freqWindowSec := int64(e.cfg.FrequencyWindowSeconds)
 		ttl := time.Duration(freqWindowSec) * time.Second
 		e.rdb.Expire(ctx, key, ttl)
 	}
 	// Set the lifetime of the key from the config (TODO: default Threshold - 3 transactions)
-	freqThreshold, err := strconv.ParseInt(e.cfg.FrequencyThreshold, 10, 64)
-	if err != nil {
-		log.Printf("ERROR: Failed to parse FrequencyThreshold: %v", err)
-		return domain.FraudResult{}
-	}
+	freqThreshold := int64(e.cfg.FrequencyThreshold)
 
 	if count > freqThreshold {
 		reason := fmt.Sprintf(
