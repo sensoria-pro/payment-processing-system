@@ -35,7 +35,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	jwtSecret := os.Getenv("JWT_SECRET")
+	// jwtSecret := os.Getenv("JWT_SECRET")
 
 	// --- 2. Setting up Observability ---
 	shutdownTracer, err := observability.InitTracer(cfg.Jaeger.Port, "payment-gateway")
@@ -134,22 +134,22 @@ func main() {
 	})
 
 	// Create a protected route group
-	r.Group(func(r chi.Router) {
-		r.Use(httphandler.JWTMiddleware([]byte(jwtSecret)))
+	// r.Group(func(r chi.Router) {
+	// 	r.Use(httphandler.JWTMiddleware([]byte(jwtSecret)))
 
-		// This endpoint will only be accessible with a valid JWT.
-		r.Get("/profile", func(w http.ResponseWriter, r *http.Request) {
-			userIDRaw := r.Context().Value("userID")
-			userID, ok := userIDRaw.(string)
-			if !ok || userID == "" {
-				http.Error(w, "Failed to get user ID", http.StatusUnauthorized)
-				return
-			}
-			if _, writeErr := w.Write([]byte("Your user ID: " + userID)); writeErr != nil {
-				logger.Error("Failed to write profile response", "error", writeErr)
-			}
-		})
-	})
+	// 	// This endpoint will only be accessible with a valid JWT.
+	// 	r.Get("/profile", func(w http.ResponseWriter, r *http.Request) {
+	// 		userIDRaw := r.Context().Value("userID")
+	// 		userID, ok := userIDRaw.(string)
+	// 		if !ok || userID == "" {
+	// 			http.Error(w, "Failed to get user ID", http.StatusUnauthorized)
+	// 			return
+	// 		}
+	// 		if _, writeErr := w.Write([]byte("Your user ID: " + userID)); writeErr != nil {
+	// 			logger.Error("Failed to write profile response", "error", writeErr)
+	// 		}
+	// 	})
+	// })
 
 	// Graceful Shutdown
 	srv := &http.Server{
