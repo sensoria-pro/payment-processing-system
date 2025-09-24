@@ -32,7 +32,7 @@ func alertHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	for _, alert := range webhook.Alerts {
-		log.Printf("🚨 ALERT %s: %s (%s) - %s",
+		log.Printf("ALERT %s: %s (%s) - %s",
 			alert.Status,
 			alert.Labels.Alertname,
 			alert.Labels.Severity,

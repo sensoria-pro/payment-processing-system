@@ -1,13 +1,15 @@
 linters:
   enable:
-    - govet
     - errcheck
+    - govet
     - staticcheck
     - unused
     - gosimple
     - revive
     - gofmt
     - goimports
+    - whitespace
+    - typecheck
 
 issues:
   exclude-use-default: false
