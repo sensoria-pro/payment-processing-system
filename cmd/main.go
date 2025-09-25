@@ -35,7 +35,13 @@ func main() {
 		os.Exit(1)
 	}
 
-	// jwtSecret := os.Getenv("JWT_SECRET")
+	 //jwtSecret := os.Getenv("JWT_SECRET")
+	 jwtSecret := cfg.JWT.JWT_secret
+	 if jwtSecret == "" {
+		logger.Error("JWT_SECRET is not set")
+		os.Exit(1)
+	}
+	 
 
 	// --- 2. Setting up Observability ---
 	shutdownTracer, err := observability.InitTracer(cfg.Jaeger.Port, "payment-gateway")
@@ -45,16 +51,16 @@ func main() {
 	}
 	defer shutdownTracer(context.Background())
 
-	// --- 3. Security Settings ---
-	oidcAuthenticator, err := httphandler.NewOIDCAuthenticator(
-		context.Background(),
-		cfg.OIDC.URL,
-		cfg.OIDC.ClientID,
-	)
-	if err != nil {
-		logger.Error("Failed to create OIDC authenticator", "url", cfg.OIDC.URL, "client_id", cfg.OIDC.ClientID, "error", err)
-		os.Exit(1)
-	}
+	// --- 3. Security Settings --- //TODO: пока не использую OIDC
+	// oidcAuthenticator, err := httphandler.NewOIDCAuthenticator(
+	// 	context.Background(),
+	// 	cfg.OIDC.URL,
+	// 	cfg.OIDC.ClientID,
+	// )
+	// if err != nil {
+	// 	logger.Error("Failed to create OIDC authenticator", "url", cfg.OIDC.URL, "client_id", cfg.OIDC.ClientID, "error", err)
+	// 	os.Exit(1)
+	// }
 
 	opaMiddleware := opa.NewMiddleware(cfg.OPA.URL, logger)
 
@@ -105,6 +111,8 @@ func main() {
 	transactionService := app.NewTransactionService(repo, broker)
 	transactionHandler := httphandler.NewTransactionHandler(transactionService)
 
+	authHandler := httphandler.NewAuthHandler(jwtSecret)
+
 	// Setting up and running an HTTP server
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
@@ -115,6 +123,9 @@ func main() {
 	r.Use(middleware.Recoverer)
 	r.Use(observability.NewMetricsMiddleware("payment-gateway"))
 	r.Use(observability.NewTracingMiddleware("payment-gateway"))
+
+	// Public endpoint for login
+	r.Post("/login", authHandler.HandleLogin)
 
 	// Health check endpoint
 	r.Get("/health", func(w http.ResponseWriter, _ *http.Request) {
@@ -128,7 +139,9 @@ func main() {
 
 	r.Handle("/metrics", promhttp.Handler())
 	r.Route("/api/v1", func(r chi.Router) {
-		r.Use(oidcAuthenticator.Middleware)
+		// r.Use(oidcAuthenticator.Middleware) //TODO: Пока не используем OIDC
+		jwtAuth := httphandler.JWTMiddleware([]byte(jwtSecret))
+		r.Use(jwtAuth)
 		r.Use(opaMiddleware.Authorize)
 		r.Post("/transactions", transactionHandler.HandleCreateTransaction)
 	})

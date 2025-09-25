@@ -23,7 +23,10 @@ oidc:
   client_id: '${OIDC_CLIENT_ID}'  
 
 opa:
-  url: '${OPA_URL}'  
+  url: '${OPA_URL}'
+
+jwt:
+  jwt_secret: '${JWT_SECRET}'   
 
 anti_fraud:
   amount_threshold: 1000.0  #TODO: Порог по сумме

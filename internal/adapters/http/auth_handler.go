@@ -1,0 +1,77 @@
+package http
+
+import (
+	"encoding/json"
+	"net/http"
+	"time"
+
+	"github.com/golang-jwt/jwt/v5"
+)
+
+// AuthHandler handles authentication-related requests.
+type AuthHandler struct {
+	jwtSecret []byte
+}
+
+// NewAuthHandler creates a new AuthHandler instance.
+func NewAuthHandler(jwtSecret string) *AuthHandler {
+	return &AuthHandler{
+		jwtSecret: []byte(jwtSecret),
+	}
+}
+
+// LoginRequest - structure for login request.
+type LoginRequest struct {
+	Username string `json:"username"`
+	Password string `json:"password"` //TODO: реализовать проверку пароля
+}
+
+// LoginResponse - structure for response with token.
+type LoginResponse struct {
+	Token string `json:"token"`
+}
+
+// HandleLogin is our main method for login.
+func (h *AuthHandler) HandleLogin(w http.ResponseWriter, r *http.Request) {
+	var req LoginRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeJSONError(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	//TODO: временная имитация - Реализовать запрос в базу данных.
+	var roles []string
+	var userID string
+	switch req.Username {
+	case "admin":
+		roles = []string{"admin", "customer"}
+		userID = "user-admin-123"
+	case "customer":
+		roles = []string{"customer"}
+		userID = "user-customer-456"
+	default:
+		writeJSONError(w, "Invalid username", http.StatusUnauthorized)
+		return
+	}
+// Create a JWT token
+	claims := jwt.MapClaims{
+		"sub":   userID, // Subject (user ID)
+		"roles": roles,  // Custom roles for OPA
+		"exp":   time.Now().Add(time.Hour * 1).Unix(), // Token lifespan is 1 hour
+		"iat":   time.Now().Unix(),                   // Token creation time
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+
+// Sign the token with our secret
+	tokenString, err := token.SignedString(h.jwtSecret)
+	if err != nil {
+		writeJSONError(w, "Failed to generate token", http.StatusInternalServerError)
+		return
+	}
+	
+// Send the token to the client
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(LoginResponse{Token: tokenString})
+}
