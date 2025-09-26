@@ -36,3 +36,10 @@ allow {
 #     transaction_owner_id := path_parts[4]
 #     transaction_owner_id == input.user.sub
 # }
+
+# ПРАВИЛО 4: Менеджеры могут смотреть аналитику
+allow {
+    input.user.roles[_] == "manager"
+    input.method == "GET"
+    input.path == "/api/v1/analytics"
+}

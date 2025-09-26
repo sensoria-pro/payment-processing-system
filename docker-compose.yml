@@ -1,25 +1,98 @@
 version: '3.8'
 
 services:
+  # --- Databases and Caches ---
   postgres:
     image: postgres:15-alpine
-    container_name: payment_gateway_db
     environment:
       POSTGRES_DB: ${POSTGRES_DB}
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-    ports:
-      - '${POSTGRES_PORT}:5432'
+    ports: ['${POSTGRES_PORT:-5432}:5432']
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./scripts/init.sql:/docker-entrypoint-initdb.d/init.sql
     healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER}']
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
       interval: 10s
       timeout: 5s
       retries: 5
 
-  # Optional: pgAdmin for database management
+  redis:
+    image: redis:7-alpine
+    ports: ['${REDIS_PORT:-6379}:6379']
+
+  clickhouse:
+    image: clickhouse/clickhouse-server:24.3
+    ports:
+      - '${CLICKHOUSE_HTTP_PORT:-8123}:8123' # HTTP
+      - '${CLICKHOUSE_NATIVE_PORT:-9000}:9000' # Native
+    environment:
+      CLICKHOUSE_DB: ${CLICKHOUSE_DB}
+      CLICKHOUSE_USER: ${CLICKHOUSE_USER}
+      CLICKHOUSE_PASSWORD: ${CLICKHOUSE_PASSWORD}
+      CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT: ${CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT}  
+    volumes:
+      - clickhouse_data:/var/lib/clickhouse
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://localhost:8123/ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+# --- Message broker (Kafka without Zookeeper) ---
+  kafka:
+    image: confluentinc/cp-kafka:7.6.1
+    ports:
+      - '${KAFKA_PORT:-9092}:9092'
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: 'CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT'
+      KAFKA_ADVERTISED_LISTENERS: 'PLAINTEXT_HOST://localhost:9092,PLAINTEXT://kafka:29092'
+      KAFKA_PROCESS_ROLES: 'broker,controller'
+      KAFKA_CONTROLLER_QUORUM_VOTERS: '1@kafka:29093'
+      KAFKA_LISTENERS: 'PLAINTEXT_HOST://0.0.0.0:9092,PLAINTEXT://0.0.0.0:29092,CONTROLLER://kafka:29093'
+      KAFKA_INTER_BROKER_LISTENER_NAME: 'PLAINTEXT'
+      KAFKA_CONTROLLER_LISTENER_NAMES: 'CONTROLLER'
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      CLUSTER_ID: 'MkU3OEVBNTcwNTJENDM2Qk'
+
+# --- Microservices ---
+  payment-gateway:
+    build:
+      context: . # Dockerfile must be in the root
+      dockerfile: Dockerfile
+      args:
+        SERVICE_NAME: payment-gateway
+        SERVICE_PATH: ./cmd/main.go
+    ports: ['${APP_PORT:-8080}:8080']
+    env_file: [.env]
+    depends_on: { postgres: { condition: service_healthy }, kafka: { condition: service_started }, redis: { condition: service_started }, postgres-migrator: { condition: service_completed_successfully } }
+
+  anti-fraud-analyzer:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        SERVICE_NAME: anti-fraud-analyzer
+        SERVICE_PATH: ./cmd/anti-fraud-analyzer/main.go
+    env_file: [.env]
+    depends_on: { clickhouse: { condition: service_healthy }, kafka: { condition: service_started }, clickhouse-migrator: { condition: service_completed_successfully }  }
+
+  alerter-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        SERVICE_NAME: alerter-service
+        SERVICE_PATH: ./cmd/alerter-service/main.go
+    ports: ['${ALERTER_SERVICE_PORT:-8081}:8080']
+    env_file: [.env]
+
+# --- Tools
+  # ... prometheus, grafana, jaeger, alertmanager, pgadmin ...
   pgadmin:
     image: dpage/pgadmin4:latest
     container_name: payment_gateway_pgadmin
@@ -39,29 +112,6 @@ services:
       timeout: 10s
       retries: 3
       start_period: 40s
-
-  redis:
-    image: redis:7-alpine
-    ports:
-      - '${REDIS_PORT}:6379'
-
-  clickhouse:
-    image: clickhouse/clickhouse-server:24.3
-    ports:
-     - '${CLICKHOUSE_HTTP_PORT}:8123' # HTTP
-     - '${CLICKHOUSE_NATIVE_PORT}:9000' # Native
-    environment:
-      CLICKHOUSE_DB: ${CLICKHOUSE_DB}
-      CLICKHOUSE_USER: ${CLICKHOUSE_USER}
-      CLICKHOUSE_PASSWORD: ${CLICKHOUSE_PASSWORD}
-      CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT: ${CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT}
-    volumes:
-      - clickhouse_data:/var/lib/clickhouse
-    healthcheck:
-      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://localhost:8123/ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 5  
 
   # --- Migrants ---
   postgres-migrator:
@@ -91,28 +141,7 @@ services:
       ORDER BY (processed_at, transaction_id);"
     depends_on:
       clickhouse:
-        condition: service_started
-
-  # --- Message broker ---
-  zookeeper:
-    image: confluentinc/cp-zookeeper:7.6.1
-    environment:
-      ZOOKEEPER_CLIENT_PORT: ${ZOOKEEPER_CLIENT_PORT}
-
-  kafka:
-    image: confluentinc/cp-kafka:7.6.1
-    depends_on:
-      - zookeeper
-    ports:
-      - '${KAFKA_PORT}:9092'
-    environment:
-      KAFKA_BROKER_ID: 1
-      KAFKA_ZOOKEEPER_CONNECT: 'zookeeper:2181'
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_INTERNAL:PLAINTEXT
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092,PLAINTEXT_INTERNAL://kafka:29092
-      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
-      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+        condition: service_started    
 
   prometheus:
     image: prom/prometheus:v2.53.0
@@ -146,52 +175,7 @@ services:
     volumes:
       - './alertmanager.yml:/etc/alertmanager/alertmanager.yml'
     command:
-      - '--config.file=/etc/alertmanager/alertmanager.yml'
-
-
-  # --- Microservices ---
-  payment-gateway:
-    build: . # Dockerfile must be in the root
-    ports:
-      - '${APP_PORT}:8080'
-    env_file:
-      - .env  
-    depends_on:
-      postgres:
-        condition: service_healthy
-      kafka:
-        condition: service_started
-      redis:
-        condition: service_started
-      postgres-migrator:
-        condition: service_completed_successfully
-
-  anti-fraud-analyzer:
-    build:
-      context: .
-      dockerfile: Dockerfile.antifraud # We use a separate Dockerfile
-    env_file:
-      - .env  
-    depends_on:
-      clickhouse:
-        condition: service_healthy
-      kafka:
-        condition: service_started
-      clickhouse-migrator:
-        condition: service_completed_successfully
-
-  alerter-service:
-    build:
-      context: .
-      dockerfile: Dockerfile.alerter
-    env_file:
-      - .env  
-    ports:
-      - '${ALERTER_SERVICE_PORT}:8081' # We use another external port to avoid conflicts
-    environment:
-      # Passing Secrets as Environment Variables
-      # TELEGRAM_BOT_TOKEN: '${TELEGRAM_BOT_TOKEN}'
-      # TELEGRAM_CHAT_ID: '${TELEGRAM_CHAT_ID}'     
+      - '--config.file=/etc/alertmanager/alertmanager.yml'        
 
 volumes:
   postgres_data:
