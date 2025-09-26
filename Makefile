@@ -1,3 +1,4 @@
+.DEFAULT_GOAL := help
 # Load variables from .env to use them in commands
 ifneq (,$(wildcard .env))
     include .env
@@ -18,12 +19,24 @@ DATABASE_URL = postgres://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@$(POSTGRES_HOST)
 # Path to migration
 MIGRATIONS_PATH = migrations_postgres
 
-.PHONY: help migrate-up migrate-down migrate-force migrate-version migrate-create
+.PHONY: help migrate-up migrate-down migrate-force migrate-version migrate-create \
+        migrate-status test-migrate prod-migrate run run-dev test-api build \
+        docker-up docker-down docker-logs docker-reset dev-docker wait-for-db \
+        dev-setup dev-reset build-alerter run-alerter build-antifraud run-antifraud \
+        build-ch-query-tool run-ch-query-tool build-dlq-tool run-dlq-tool \
+        build-service-doctor run-service-doctor build-txn-generator run-txn-generator \
+        build-all start-all stop-all health-check
 
-help: ## Show help
-	@echo "Доступные команды:"
+help: ## Show this help
+	@echo ""
+	@echo "🎯 Доступные команды:"
 	@echo "=================="
-	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' Makefile | sort | awk -F ':.*## ' '{printf "make %-20s - %s\n", $$1, $$2}'
+	@awk '/^[a-zA-Z_-]+:.*?## / {\
+		split($$0, parts, /:\s*##\s*/); \
+		gsub(/^[ \t]+|[ \t]+$$/, "", parts[1]); \
+		printf "  \033[36m%-25s\033[0m %s\n", parts[1], parts[2] \
+	}' $(MAKEFILE_LIST)
+	@echo ""
 
 migrate-up: ## Apply all migrations
 	@if [ "$(POSTGRES_PASSWORD)" = "password" ]; then \
@@ -31,8 +44,8 @@ migrate-up: ## Apply all migrations
         echo "💡 Установите POSTGRES_PASSWORDD в .env или через export"; \
         exit 1; \
     fi
-    @echo "Применение миграций..."
-    migrate -path $(MIGRATIONS_PATH) -database "$(DATABASE_URL)" up
+	@echo "Применение миграций..."
+	migrate -path $(MIGRATIONS_PATH) -database "$(DATABASE_URL)" up
 
 migrate-down: ## Roll back all migrations
 	@echo "Откат всех миграций..."
@@ -65,11 +78,13 @@ test-migrate: ## Running tests with migrations
 
 # ----- Production commands
 prod-migrate: ## Applying Migrations in Production
-    @echo "⚠️  Применение миграций в продакшене!"
-    @echo "❗ Убедитесь, что у вас есть резервная копия!"
-    @read -p "Продолжить? (y/N): " -n 1 -r; echo
-    @if [[ ! $$REPLY =~ ^[Yy]$$ ]]; then exit 1; fi
-    $(MAKE) migrate-up
+	@echo "⚠️  Применение миграций в продакшене!"
+	@echo "❗ Убедитесь, что у вас есть резервная копия!"
+	@read -p "Продолжить? (y/N): " REPLY; \
+	echo; \
+	case "$$REPLY" in [yY]|[yY][eE][sS]) ;; *) exit 1;; esac
+	@if [[ ! $$REPLY =~ ^[Yy]$$ ]]; then exit 1; fi
+	$(MAKE) migrate-up
 
 # ----- Commands for launching the application
 run: ## Launching the application
@@ -123,24 +138,24 @@ dev-docker: ## Complete environment setup with Docker
 	@echo "Jaeger: http://localhost:$(JAEGER_PORT)"
 
 wait-for-db: ## Wait for PostgreSQL to be ready
-    @echo "Ожидание готовности PostgreSQL..."
-    @until docker exec -i postgres-db pg_isready -U $(POSTGRES_USER) -d $(POSTGRES_DB); do \
+	@echo "Ожидание готовности PostgreSQL..."
+	@until docker exec -i postgres-db pg_isready -U $(POSTGRES_USER) -d $(POSTGRES_DB); do \
         echo "⏳ PostgreSQL недоступен, ждём..."; \
         sleep 2; \
     done
-    @echo "✅ PostgreSQL готов!"
+	@echo "✅ PostgreSQL готов!"
 
 # ------- Development commands
 dev-setup: ## Setting up the development environment
-    @echo "Настройка окружения для разработки..."
-    @if [ ! -f .env ]; then cp env.example .env; echo "Создан .env файл из примера"; fi
-    @echo "Запуск PostgreSQL..."
-    $(MAKE) docker-up
-    @echo "Ожидание готовности PostgreSQL..."
-    $(MAKE) wait-for-db
-    @echo "Создание базы данных..."
-    docker exec -i postgres-db createdb -U $(POSTGRES_USER) $(POSTGRES_DB) || echo "База уже существует"
-    $(MAKE) migrate-up
+	@echo "Настройка окружения для разработки..."
+	@if [ ! -f .env ]; then cp env.example .env; echo "Создан .env файл из примера"; fi
+	@echo "Запуск PostgreSQL..."
+	$(MAKE) docker-up
+	@echo "Ожидание готовности PostgreSQL..."
+	$(MAKE) wait-for-db
+	@echo "Создание базы данных..."
+	docker exec -i postgres-db createdb -U $(POSTGRES_USER) $(POSTGRES_DB) || echo "База уже существует"
+	$(MAKE) migrate-up
 
 dev-reset: ## Resetting the development database
 	@echo "Сброс базы данных..."
