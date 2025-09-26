@@ -2,6 +2,8 @@ module payment-processing-system
 
 go 1.24.0
 
+toolchain go1.24.6
+
 require (
 	github.com/ClickHouse/clickhouse-go/v2 v2.40.3
 	github.com/confluentinc/confluent-kafka-go/v2 v2.11.1
