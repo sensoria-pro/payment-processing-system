@@ -17,7 +17,7 @@ import (
 	"github.com/google/uuid"
 )
 
-//TODO: Структура запроса, должна совпадать с той, что ожидает payment-gateway
+// TODO: Структура запроса, должна совпадать с той, что ожидает payment-gateway
 type TransactionRequest struct {
 	IdempotencyKey string  `json:"idempotency_key"`
 	CardNumber     string  `json:"card_number"`

@@ -2,9 +2,10 @@ package config
 
 import (
 	"fmt"
-	"os"
 	"gopkg.in/yaml.v3"
+	"os"
 )
+
 // AntiFraudConfig stores parameters for the rules engine.
 type AntiFraudConfig struct {
 	AmountThreshold        float64 `yaml:"amount_threshold"`
@@ -30,7 +31,7 @@ type Config struct {
 		Addr string `yaml:"addr"`
 	} `yaml:"redis"`
 	Jaeger struct {
-		Port string `yaml:"port"`
+		Port     string `yaml:"port"`
 		PortGrpc string `yaml:"port_grpc"`
 	} `yaml:"jaeger"`
 	OIDC struct {

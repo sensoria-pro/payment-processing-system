@@ -14,7 +14,7 @@ import (
 	"github.com/ClickHouse/clickhouse-go/v2"
 	"github.com/confluentinc/confluent-kafka-go/v2/kafka"
 	"github.com/redis/go-redis/v9"
-	
+
 	"payment-processing-system/internal/antifraud"
 	"payment-processing-system/internal/config"
 	"payment-processing-system/internal/core/domain"
@@ -72,7 +72,9 @@ func main() {
 	// --- Application Start ---
 
 	// Subscribe to the main transaction topic.
-	consumer.Subscribe("transactions.created", nil)
+	if err := consumer.Subscribe("transactions.created", nil); err != nil {
+		log.Fatalf("Failed to subscribe to topic: %v", err)
+	}
 
 	// Set up graceful shutdown.
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)

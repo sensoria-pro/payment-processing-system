@@ -6,7 +6,7 @@ import (
 	"payment-processing-system/internal/core/domain"
 )
 
-//Broker - stub for MessageBroker
+// Broker - stub for MessageBroker
 type Broker struct{}
 
 func NewBroker(bootstrapServers, topic string) (*Broker, error) {

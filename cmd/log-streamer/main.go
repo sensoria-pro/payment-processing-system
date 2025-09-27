@@ -18,9 +18,9 @@ import (
 )
 
 const (
-	composeFileName = "docker-compose.yml"
+	composeFileName    = "docker-compose.yml"
 	projectRootRelPath = "../.."
-) 
+)
 
 var colorPalette = []*color.Color{
 	color.New(color.FgCyan),

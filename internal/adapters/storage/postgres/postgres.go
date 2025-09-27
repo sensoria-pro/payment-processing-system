@@ -8,7 +8,7 @@ import (
 	"payment-processing-system/internal/core/domain"
 )
 
-//Repository is an implementation of the TransactionRepository port for PostgreSQL.
+// Repository is an implementation of the TransactionRepository port for PostgreSQL.
 type Repository struct {
 	pool *pgxpool.Pool
 }
@@ -35,7 +35,7 @@ func (r *Repository) Close() {
 	r.pool.Close()
 }
 
-//Save implements the TransactionRepository interface method.
+// Save implements the TransactionRepository interface method.
 func (r *Repository) Save(ctx context.Context, tx domain.Transaction) error {
 	const sql = `
 		INSERT INTO transactions 

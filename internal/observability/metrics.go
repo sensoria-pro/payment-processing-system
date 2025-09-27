@@ -34,11 +34,11 @@ func NewMetricsMiddleware(serviceName string) func(http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			start := time.Now()
 			ww := middleware.NewWrapResponseWriter(w, r.ProtoMajor)
-			
+
 			defer func() {
 				duration := time.Since(start)
 				path := r.URL.Path
-				
+
 				httpRequestDuration.WithLabelValues(serviceName, r.Method, path).Observe(duration.Seconds())
 				httpRequestsTotal.WithLabelValues(serviceName, r.Method, path, strconv.Itoa(ww.Status())).Inc()
 			}()

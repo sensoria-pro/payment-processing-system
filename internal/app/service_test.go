@@ -31,7 +31,8 @@ func (m *MockBroker) PublishTransactionCreated(ctx context.Context, tx domain.Tr
 	args := m.Called(ctx, tx)
 	return args.Error(0)
 }
-//first test
+
+// first test
 func TestTransactionService_CreateTransaction_Success(t *testing.T) {
 	// --- Arrange ---
 	mockRepo := new(MockRepository)

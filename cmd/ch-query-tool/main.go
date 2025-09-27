@@ -84,8 +84,8 @@ func main() {
 	}
 	// Add the --limit flag to the top-cards command with a default value of 10
 	topCardsCmd.Flags().Int("limit", 10, "Number of top cards to show")
-			//TODO: Логика для top-cards...
-		
+	//TODO: Логика для top-cards...
+
 	rootCmd.AddCommand(suspiciousCmd, topCardsCmd)
 	if err := rootCmd.Execute(); err != nil {
 		log.Fatalf("Ошибка выполнения команды: %v", err)

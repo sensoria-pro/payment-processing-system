@@ -1,9 +1,10 @@
 package domain
 
 import (
-	"time"
 	"github.com/google/uuid"
+	"time"
 )
+
 // Package domain contains the core business logic and models for the application.
 // This package has NO dependencies on external libraries like databases, Kafka, Redis, etc.
 // It is the pure, technology-agnostic heart of the service.
@@ -18,15 +19,15 @@ const (
 )
 
 // Transaction is the central entity of our domain.
-//TODO: Она не содержит тегов для JSON или БД, это чистая бизнес-модель.
+// TODO: Она не содержит тегов для JSON или БД, это чистая бизнес-модель.
 type Transaction struct {
-	ID              uuid.UUID
-	Status          TransactionStatus
-	Amount          float64
-	Currency        string
-	CardNumberHash  string //TODO: Хэш номера карты, а не сам номер
-	IdempotencyKey  uuid.UUID
-	CreatedAt       time.Time
+	ID             uuid.UUID
+	Status         TransactionStatus
+	Amount         float64
+	Currency       string
+	CardNumberHash string //TODO: Хэш номера карты, а не сам номер
+	IdempotencyKey uuid.UUID
+	CreatedAt      time.Time
 }
 
 // FraudResult represents the outcome of a fraud check.

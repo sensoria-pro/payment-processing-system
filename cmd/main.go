@@ -35,13 +35,12 @@ func main() {
 		os.Exit(1)
 	}
 
-	 //jwtSecret := os.Getenv("JWT_SECRET")
-	 jwtSecret := cfg.JWT.JWT_secret
-	 if jwtSecret == "" {
+	//jwtSecret := os.Getenv("JWT_SECRET")
+	jwtSecret := cfg.JWT.JWT_secret
+	if jwtSecret == "" {
 		logger.Error("JWT_SECRET is not set")
 		os.Exit(1)
 	}
-	 
 
 	// --- 2. Setting up Observability ---
 	shutdownTracer, err := observability.InitTracer(cfg.Jaeger.Port, "payment-gateway")

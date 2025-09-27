@@ -17,16 +17,16 @@ import (
 
 // Config stores all necessary addresses and DSN for connection
 type Config struct {
-	GatewayAPI      string
-	AntiFraudAPI    string // We will check the TCP connection, because there is no health endpoint.
-	AlerterAPI      string
-	PostgresDSN     string
-	RedisAddr       string
-	KafkaBrokers    string
-	ClickhouseAddr  string
-	KeycloakAddr    string
-	VaultAddr       string
-	OpaAddr         string
+	GatewayAPI     string
+	AntiFraudAPI   string // We will check the TCP connection, because there is no health endpoint.
+	AlerterAPI     string
+	PostgresDSN    string
+	RedisAddr      string
+	KafkaBrokers   string
+	ClickhouseAddr string
+	KeycloakAddr   string
+	VaultAddr      string
+	OpaAddr        string
 }
 
 // Check describes one diagnostic check
@@ -41,16 +41,16 @@ type Check struct {
 // loadConfig reads configuration from environment variables with fallbacks
 func loadConfig() *Config {
 	return &Config{
-		GatewayAPI:      getEnv("GATEWAY_API_URL", "http://localhost:8080"),
-		AntiFraudAPI:    getEnv("ANTIFRAUD_API_URL", "localhost:8082"),
-		AlerterAPI:      getEnv("ALERTER_API_URL", "http://localhost:8081"),
-		PostgresDSN:     getEnv("POSTGRES_DSN", "postgres://user:password@localhost:5432/transactionsdb?sslmode=disable"),
-		RedisAddr:       getEnv("REDIS_ADDR", "localhost:6379"),
-		KafkaBrokers:    getEnv("KAFKA_BROKERS", "localhost:9092"),
-		ClickhouseAddr:  getEnv("CLICKHOUSE_ADDR", "localhost:9000"),
-		KeycloakAddr:    getEnv("KEYCLOAK_ADDR", "http://localhost:8888"),
-		VaultAddr:       getEnv("VAULT_ADDR", "http://localhost:8200"),
-		OpaAddr:         getEnv("OPA_ADDR", "http://localhost:8181"),
+		GatewayAPI:     getEnv("GATEWAY_API_URL", "http://localhost:8080"),
+		AntiFraudAPI:   getEnv("ANTIFRAUD_API_URL", "localhost:8082"),
+		AlerterAPI:     getEnv("ALERTER_API_URL", "http://localhost:8081"),
+		PostgresDSN:    getEnv("POSTGRES_DSN", "postgres://user:password@localhost:5432/transactionsdb?sslmode=disable"),
+		RedisAddr:      getEnv("REDIS_ADDR", "localhost:6379"),
+		KafkaBrokers:   getEnv("KAFKA_BROKERS", "localhost:9092"),
+		ClickhouseAddr: getEnv("CLICKHOUSE_ADDR", "localhost:9000"),
+		KeycloakAddr:   getEnv("KEYCLOAK_ADDR", "http://localhost:8888"),
+		VaultAddr:      getEnv("VAULT_ADDR", "http://localhost:8200"),
+		OpaAddr:        getEnv("OPA_ADDR", "http://localhost:8181"),
 	}
 }
 
@@ -124,18 +124,18 @@ func checkHttpHealth(path string) func(context.Context, *Config) error {
 		default:
 			return fmt.Errorf("unknown http path: %s", path)
 		}
-		
+
 		req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
 		if err != nil {
 			return err
 		}
-		
+
 		resp, err := http.DefaultClient.Do(req)
 		if err != nil {
 			return err
 		}
 		defer resp.Body.Close()
-		
+
 		if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 			return fmt.Errorf("bad status: %s", resp.Status)
 		}
@@ -151,7 +151,6 @@ func checkTCPHealth(ctx context.Context, cfg *Config) error {
 	}
 	return conn.Close()
 }
-
 
 func checkPostgres(ctx context.Context, cfg *Config) error {
 	conn, err := pgxpool.New(ctx, cfg.PostgresDSN)
@@ -174,7 +173,7 @@ func checkKafka(ctx context.Context, cfg *Config) error {
 		return err
 	}
 	defer adminClient.Close()
-	
+
 	// Requesting cluster metadata with a timeout
 	_, err = adminClient.GetMetadata(nil, false, 5000)
 	return err

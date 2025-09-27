@@ -30,7 +30,7 @@ func JWTMiddleware(jwtSecret []byte) func(http.Handler) http.Handler {
 			}
 
 			tokenString := headerParts[1]
-			
+
 			// Parse the token
 			token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 				// Check that the correct signature algorithm is used
@@ -50,7 +50,7 @@ func JWTMiddleware(jwtSecret []byte) func(http.Handler) http.Handler {
 				http.Error(w, "Invalid token claims", http.StatusUnauthorized)
 				return
 			}
-			
+
 			// Enrich the request context with information from the token (e.g. user ID)
 			ctx := context.WithValue(r.Context(), userContextKey, claims["sub"])
 			next.ServeHTTP(w, r.WithContext(ctx))

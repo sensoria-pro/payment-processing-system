@@ -10,6 +10,7 @@ import (
 
 // Key for extracting claims from context
 type contextKey string
+
 const claimsContextKey = contextKey("claims")
 
 // Middleware for authorization via OPA.
@@ -48,7 +49,7 @@ func (m *Middleware) Authorize(next http.Handler) http.Handler {
 			http.Error(w, "Claims not found in context", http.StatusInternalServerError)
 			return
 		}
-		
+
 		// Generate input for OPA
 		input := OPAInput{
 			Method: r.Method,
@@ -87,7 +88,7 @@ func (m *Middleware) Authorize(next http.Handler) http.Handler {
 			http.Error(w, "Internal server error", http.StatusInternalServerError)
 			return
 		}
-		
+
 		// Checking the OPA solution
 		if !opaResp.Allow {
 			http.Error(w, "Forbidden", http.StatusForbidden)

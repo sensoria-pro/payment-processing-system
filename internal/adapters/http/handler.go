@@ -5,7 +5,14 @@ import (
 	"net/http"
 
 	"github.com/google/uuid"
+	"payment-processing-system/internal/config"
 	"payment-processing-system/internal/core/ports"
+	"payment-processing-system/internal/observability"
+)
+
+var (
+	cfg, err = config.Load("configs/config.yaml")
+	logger   = observability.SetupLogger(cfg.App.Env)
 )
 
 type TransactionHandler struct {
@@ -45,5 +52,8 @@ func (h *TransactionHandler) HandleCreateTransaction(w http.ResponseWriter, r *h
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusAccepted) // 202 Accepted
-	json.NewEncoder(w).Encode(map[string]string{"transaction_id": tx.ID.String()})
+	if err := json.NewEncoder(w).Encode(map[string]string{"transaction_id": tx.ID.String()}); err != nil {
+		// If we can't send a response, we log it
+		logger.Error("failed to write json response", "error", err)
+	}
 }

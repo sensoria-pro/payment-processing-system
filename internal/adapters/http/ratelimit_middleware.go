@@ -21,7 +21,7 @@ func RateLimiterMiddleware(rdb *redis.Client, limit int, window time.Duration) f
 				http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 				return
 			}
-			
+
 			// Using the Sliding Window Algorithm Based on Redis Sorted Set
 			key := fmt.Sprintf("ratelimit:%s", ip)
 			now := time.Now().UnixNano()

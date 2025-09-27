@@ -12,6 +12,7 @@ import (
 
 // Key for storing claims in context
 type contextKey string
+
 const claimsContextKey = contextKey("claims")
 
 // ErrorResponse is a standard structure for returning errors in JSON format.
@@ -81,4 +82,3 @@ func (a *OIDCAuthenticator) Middleware(next http.Handler) http.Handler {
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
-

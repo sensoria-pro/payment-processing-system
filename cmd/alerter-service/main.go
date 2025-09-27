@@ -1,4 +1,4 @@
-//TODO: просто логирует алерты
+// TODO: просто логирует алерты
 package main
 
 import (
@@ -52,7 +52,6 @@ func main() {
 	log.Println("Alerter service started on :8081")
 	log.Fatal(http.ListenAndServe(":8081", r))
 }
-
 
 //TODO: логирует алерты в телеграм
 
@@ -167,4 +166,3 @@ func main() {
 // 	log.Println("Alerter service started on :8080, configured for Telegram notifications.")
 // 	log.Fatal(http.ListenAndServe(":8080", nil))
 // }
-

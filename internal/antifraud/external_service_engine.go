@@ -13,7 +13,7 @@ import (
 
 // ExternalServiceRuleEngine - calls an external API to make decisions.
 type ExternalServiceRuleEngine struct {
-	client  *http.Client
+	client    *http.Client
 	scorerURL string
 }
 

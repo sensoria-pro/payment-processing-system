@@ -134,6 +134,7 @@ func getErrorHeaders(headers []kafka.Header) (string, string) {
 	}
 	return errorType, errorString
 }
+
 // parsePartitionOffset parses "partition:offset" string into integers
 func parsePartitionOffset(arg string) (int, int64) {
 	parts := strings.Split(arg, ":")

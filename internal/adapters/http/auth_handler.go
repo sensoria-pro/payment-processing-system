@@ -53,25 +53,29 @@ func (h *AuthHandler) HandleLogin(w http.ResponseWriter, r *http.Request) {
 		writeJSONError(w, "Invalid username", http.StatusUnauthorized)
 		return
 	}
-// Create a JWT token
+	// Create a JWT token
 	claims := jwt.MapClaims{
-		"sub":   userID, // Subject (user ID)
-		"roles": roles,  // Custom roles for OPA
+		"sub":   userID,                               // Subject (user ID)
+		"roles": roles,                                // Custom roles for OPA
 		"exp":   time.Now().Add(time.Hour * 1).Unix(), // Token lifespan is 1 hour
-		"iat":   time.Now().Unix(),                   // Token creation time
+		"iat":   time.Now().Unix(),                    // Token creation time
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 
-// Sign the token with our secret
+	// Sign the token with our secret
 	tokenString, err := token.SignedString(h.jwtSecret)
 	if err != nil {
 		writeJSONError(w, "Failed to generate token", http.StatusInternalServerError)
 		return
 	}
-	
-// Send the token to the client
+
+	// Send the token to the client
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(LoginResponse{Token: tokenString})
+
+	if err := json.NewEncoder(w).Encode(LoginResponse{Token: tokenString}); err != nil {
+		// If we can't send a response, we log it
+		logger.Error("failed to write json response", "error", err)
+	}
 }

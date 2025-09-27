@@ -8,7 +8,7 @@ import (
 	"github.com/confluentinc/confluent-kafka-go/v2/kafka"
 	"payment-processing-system/internal/core/domain"
 	//TODO: Нужен логгер, пока просто воспользуемся стандартным
-	"log" 
+	"log"
 )
 
 // Broker is an implementation of the MessageBroker port for Kafka.

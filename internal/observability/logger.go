@@ -8,6 +8,7 @@ import (
 )
 
 type contextKey string
+
 const loggerKey = contextKey("logger")
 
 // SetupLogger define a global logger (default is slog.)

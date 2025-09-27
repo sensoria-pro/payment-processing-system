@@ -8,7 +8,7 @@ import (
 )
 
 // TransactionRepository is an "outgoing port". It defines WHAT we want to do with the repository, but not HOW.
-//TODO: Реализация может быть для PostgreSQL, in-memory и т.д.
+// TODO: Реализация может быть для PostgreSQL, in-memory и т.д.
 type TransactionRepository interface {
 	Save(ctx context.Context, tx domain.Transaction) error
 }

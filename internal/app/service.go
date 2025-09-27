@@ -3,9 +3,9 @@ package app
 import (
 	"context"
 	"crypto/sha256"
+	"errors"
 	"fmt"
 	"time"
-	"errors"
 
 	"github.com/google/uuid"
 	"payment-processing-system/internal/core/domain"
@@ -19,7 +19,7 @@ type service struct {
 }
 
 // NewTransactionService is the constructor of our service.
-//TODO: Он принимает зависимости через интерфейсы (Dependency Injection).
+// TODO: Он принимает зависимости через интерфейсы (Dependency Injection).
 func NewTransactionService(repo ports.TransactionRepository, broker ports.MessageBroker) ports.TransactionService {
 	return &service{
 		repo:   repo,

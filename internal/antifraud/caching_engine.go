@@ -13,9 +13,10 @@ import (
 
 // CachingRuleEngine implements the FraudRuleEngine interface using Redis for stateful checks.
 type CachingRuleEngine struct {
-	rdb  *redis.Client
-	cfg  config.AntiFraudConfig
+	rdb *redis.Client
+	cfg config.AntiFraudConfig
 }
+
 // NewCachingRuleEngine creates a new engine connected to Redis.
 func NewCachingRuleEngine(rdb *redis.Client, cfg config.AntiFraudConfig) *CachingRuleEngine {
 	return &CachingRuleEngine{
@@ -55,8 +56,8 @@ func (e *CachingRuleEngine) CheckTransaction(tx domain.Transaction) domain.Fraud
 
 	if count > freqThreshold {
 		reason := fmt.Sprintf(
-			"High frequency: %d transactions in %d seconds", 
-			count, 
+			"High frequency: %d transactions in %d seconds",
+			count,
 			e.cfg.FrequencyWindowSeconds,
 		)
 		return domain.FraudResult{IsFraudulent: true, Reason: reason}
