@@ -79,7 +79,7 @@ func main() {
 	logger.Info("successfully connected to postgres")
 
 	// Initializing the Redis client
-	redisClient, err := redis.NewClient(cfg.Redis.Addr)
+	redisClient, _ := redis.NewClient(cfg.Redis.Addr)
 	// Check the connection to Redis
 
 	if _, err := redisClient.Ping(context.Background()).Result(); err != nil {

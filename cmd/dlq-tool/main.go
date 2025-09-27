@@ -24,7 +24,7 @@ func main() {
 	var viewCmd = &cobra.Command{
 		Use:   "view",
 		Short: "Просмотреть сообщения в DLQ",
-		Run: func(cmd *cobra.Command, args []string) {
+		Run: func(cmd *cobra.Command, _ []string) {
 			limit, _ := cmd.Flags().GetInt("limit")
 			fmt.Printf("Просмотр последних %d сообщений из %s...\n", limit, dlqTopic)
 
