@@ -11,9 +11,10 @@ import (
 )
 
 var (
-	cfg, err = config.Load("configs/config.yaml")
+	cfg, _ = config.Load("configs/config.yaml")
 	logger   = observability.SetupLogger(cfg.App.Env)
 )
+
 
 type TransactionHandler struct {
 	service ports.TransactionService

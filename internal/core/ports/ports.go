@@ -2,6 +2,7 @@ package ports
 
 import (
 	"context"
+	"time"
 
 	"github.com/google/uuid"
 	"payment-processing-system/internal/core/domain"
@@ -21,4 +22,9 @@ type MessageBroker interface {
 // TransactionService is an "incoming port" that defines how the outside world can interact with our kernel.
 type TransactionService interface {
 	CreateTransaction(ctx context.Context, amount float64, currency, cardNum string, idemKey uuid.UUID) (*domain.Transaction, error)
+}
+// RateLimiterRepository defines the port for a rate limiting storage.
+type RateLimiterRepository interface {
+	// IsAllowed checks if a request for a given key is within the defined limit.
+	IsAllowed(ctx context.Context, key string, limit int, window time.Duration) (bool, error)
 }

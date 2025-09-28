@@ -59,16 +59,16 @@ func main() {
 
 	// We are expanding the list of checks to include all components of our system
 	checks := []Check{
-		{Name: "Payment Gateway", Func: checkHttpHealth("/metrics")},
+		{Name: "Payment Gateway", Func: checkHTTPHealth("/metrics")},
 		{Name: "Anti-Fraud Analyzer", Func: checkTCPHealth},
-		{Name: "Alerter Service", Func: checkHttpHealth("/alert")},
+		{Name: "Alerter Service", Func: checkHTTPHealth("/alert")},
 		{Name: "PostgreSQL", Func: checkPostgres},
 		{Name: "Redis", Func: checkRedis},
 		{Name: "Kafka Cluster", Func: checkKafka},
 		{Name: "ClickHouse", Func: checkClickHouse},
-		{Name: "Keycloak", Func: checkHttpHealth("/health/ready")},
-		{Name: "HashiCorp Vault", Func: checkHttpHealth("/v1/sys/health")},
-		{Name: "Open Policy Agent", Func: checkHttpHealth("/health")},
+		{Name: "Keycloak", Func: checkHTTPHealth("/health/ready")},
+		{Name: "HashiCorp Vault", Func: checkHTTPHealth("/v1/sys/health")},
+		{Name: "Open Policy Agent", Func: checkHTTPHealth("/health")},
 	}
 
 	var wg sync.WaitGroup
@@ -106,7 +106,7 @@ func main() {
 
 // --- Functions for checks ---
 
-func checkHttpHealth(path string) func(context.Context, *Config) error {
+func checkHTTPHealth(path string) func(context.Context, *Config) error {
 	return func(ctx context.Context, cfg *Config) error {
 		// Determine URL based on check name
 		var url string

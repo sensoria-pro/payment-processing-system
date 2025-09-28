@@ -22,7 +22,7 @@ func main() {
 	var suspiciousCmd = &cobra.Command{
 		Use:   "suspicious",
 		Short: "Get suspicious transactions",
-		Run: func(cmd *cobra.Command, args []string) {
+		Run: func(_ *cobra.Command, _ []string) {
 			conn := connect(dsn)
 			defer conn.Close()
 
@@ -54,7 +54,7 @@ func main() {
 	var topCardsCmd = &cobra.Command{
 		Use:   "top-cards",
 		Short: "Get top cards by transaction count",
-		Run: func(cmd *cobra.Command, args []string) {
+		Run: func(cmd *cobra.Command, _ []string) {
 			// Get the value of the --limit flag
 			limit, _ := cmd.Flags().GetInt("limit")
 

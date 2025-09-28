@@ -42,7 +42,7 @@ type Config struct {
 		URL string `yaml:"url"`
 	} `yaml:"opa"`
 	JWT struct {
-		JWT_secret string `yaml:"jwt_secret"`
+		JWTSecret string `yaml:"jwt_secret"`
 	} `yaml:"jwt"`
 	AntiFraud AntiFraudConfig `yaml:"anti_fraud"`
 }

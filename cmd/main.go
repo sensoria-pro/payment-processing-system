@@ -36,7 +36,7 @@ func main() {
 	}
 
 	//jwtSecret := os.Getenv("JWT_SECRET")
-	jwtSecret := cfg.JWT.JWT_secret
+	jwtSecret := cfg.JWT.JWTSecret
 	if jwtSecret == "" {
 		logger.Error("JWT_SECRET is not set")
 		os.Exit(1)
@@ -79,19 +79,14 @@ func main() {
 	logger.Info("successfully connected to postgres")
 
 	// Initializing the Redis client
-	redisClient, _ := redis.NewClient(cfg.Redis.Addr)
-	// Check the connection to Redis
-
-	if _, err := redisClient.Ping(context.Background()).Result(); err != nil {
-		logger.Error("Failed to connect to Redis", "error", err)
-		os.Exit(1)
-	}
-	defer func() {
-		if closeErr := redisClient.Close(); closeErr != nil {
-			logger.Error("Failed to close redis connection", "error", closeErr)
-		}
-	}()
-	logger.Info("successfully connected to redis - redisClient")
+	rateLimiterRepo, err := redis.NewRateLimiterAdapter(cfg.Redis.Addr)
+    if err != nil {
+        logger.Error("Failed to connect to Redis", "error", err)
+        os.Exit(1)
+    }
+    defer rateLimiterRepo.Close()
+    logger.Info("successfully connected to redis")
+	rateLimiterMiddleware := httphandler.NewRateLimiterMiddleware(rateLimiterRepo, logger)
 
 	// Create a Kafka producer
 	//TODO: закомментировать для локальной версии тестов
@@ -115,6 +110,8 @@ func main() {
 	// Setting up and running an HTTP server
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
+	r.Use(rateLimiterMiddleware.Handler)
+
 	r.Use(middleware.Recoverer)
 	r.Use(middleware.RequestID)
 	r.Use(middleware.RealIP)

@@ -38,7 +38,9 @@ func main() {
 			}
 			defer c.Close()
 
-			c.SubscribeTopics([]string{dlqTopic}, nil)
+			if err := c.SubscribeTopics([]string{dlqTopic}, nil); err != nil {
+				log.Fatalf("Ошибка подписки на топик: %v", err)
+			}
 			w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
 			fmt.Fprintln(w, "OFFSET\tKEY\tERROR_TYPE\tERROR_STRING")
 			fmt.Fprintln(w, "------\t---\t----------\t------------")

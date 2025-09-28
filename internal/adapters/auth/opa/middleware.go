@@ -30,7 +30,7 @@ func NewMiddleware(opaURL string, logger *slog.Logger) *Middleware {
 }
 
 // OPAInput - structure for querying OPA.
-type OPAInput struct {
+type Input struct {
 	Method string                 `json:"method"`
 	Path   string                 `json:"path"`
 	User   map[string]interface{} `json:"user"`
@@ -51,7 +51,7 @@ func (m *Middleware) Authorize(next http.Handler) http.Handler {
 		}
 
 		// Generate input for OPA
-		input := OPAInput{
+		input := Input{
 			Method: r.Method,
 			Path:   r.URL.Path,
 			User:   claims,
