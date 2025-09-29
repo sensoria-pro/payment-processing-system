@@ -62,25 +62,15 @@ func Load(configPath string) (*Config, error) {
 	if err != nil {
 		return nil, fmt.Errorf("error parsing config file: %w", err)
 	}
-
+	if config.AntiFraud.AmountThreshold == 0 {
+		config.AntiFraud.AmountThreshold = 1000.0
+	}
+	if config.AntiFraud.FrequencyThreshold == 0 {
+		config.AntiFraud.FrequencyThreshold = 3
+	}
+	if config.AntiFraud.FrequencyWindowSeconds == 0 {
+		config.AntiFraud.FrequencyWindowSeconds = 60
+	}
 	return config, nil
 
-	// Replace environment variables in the configuration
-	// config.ServerPort = expandEnv(config.ServerPort)
-	// config.Postgres.DSN = expandEnv(config.Postgres.DSN)
-	// config.Kafka.BootstrapServers = expandEnv(config.Kafka.BootstrapServers)
-	// config.Kafka.Topic = expandEnv(config.Kafka.Topic)
-	// config.Redis.Addr = expandEnv(config.Redis.Addr)
-	// return config, nil
 }
-
-// expandEnv replaces environment variables in a string
-// func expandEnv(s string) string {
-// 	return os.Expand(s, func(key string) string {
-// 		if val := os.Getenv(key); val != "" {
-// 			return val
-// 		}
-// 		// If the variable is not found, return the original string
-// 		return "${" + key + "}"
-// 	})
-// }

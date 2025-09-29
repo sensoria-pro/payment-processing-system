@@ -103,9 +103,11 @@ func main() {
 
 	// Dependency Injection: "Injecting" adapters into the kernel
 	transactionService := app.NewTransactionService(repo, broker)
-	transactionHandler := httphandler.NewTransactionHandler(transactionService)
+	transactionHandler := httphandler.NewTransactionHandler(transactionService, logger)
 
 	authHandler := httphandler.NewAuthHandler(jwtSecret)
+
+	
 
 	// Setting up and running an HTTP server
 	r := chi.NewRouter()

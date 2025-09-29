@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"time"
+	"log/slog"
 
 	"github.com/golang-jwt/jwt/v5"
 )
@@ -11,6 +12,7 @@ import (
 // AuthHandler handles authentication-related requests.
 type AuthHandler struct {
 	jwtSecret []byte
+	logger *slog.Logger
 }
 
 // NewAuthHandler creates a new AuthHandler instance.
@@ -76,6 +78,6 @@ func (h *AuthHandler) HandleLogin(w http.ResponseWriter, r *http.Request) {
 
 	if err := json.NewEncoder(w).Encode(LoginResponse{Token: tokenString}); err != nil {
 		// If we can't send a response, we log it
-		logger.Error("failed to write json response", "error", err)
+		h.logger.Error("failed to write json response", "error", err)
 	}
 }
