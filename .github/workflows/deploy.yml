@@ -14,7 +14,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code # 1. Download the source code of the repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Set up Go # 2. Setting up the Go environment
         uses: actions/setup-go@v5
@@ -55,7 +55,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Dependency Review  # 1. Check dependencies at all
         if: github.event_name == 'pull_request'
