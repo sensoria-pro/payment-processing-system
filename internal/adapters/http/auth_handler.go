@@ -11,14 +11,15 @@ import (
 
 // AuthHandler handles authentication-related requests.
 type AuthHandler struct {
-	jwtSecret []byte
 	logger *slog.Logger
+	jwtSecret []byte	
 }
 
 // NewAuthHandler creates a new AuthHandler instance.
-func NewAuthHandler(jwtSecret string) *AuthHandler {
+func NewAuthHandler(logger *slog.Logger, jwtSecret string) *AuthHandler {
 	return &AuthHandler{
-		jwtSecret: []byte(jwtSecret),
+		logger:    slog.Default(),
+		jwtSecret: []byte(jwtSecret),	
 	}
 }
 

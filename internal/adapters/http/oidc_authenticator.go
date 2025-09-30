@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"strings"
 
@@ -12,7 +13,7 @@ import (
 
 // Key for storing claims in context
 type contextKey string
-
+var logger *slog.Logger
 const claimsContextKey = contextKey("claims")
 
 // ErrorResponse is a standard structure for returning errors in JSON format.
@@ -20,31 +21,45 @@ type ErrorResponse struct {
 	Error string `json:"error"`
 }
 
-// writeJSONError is a helper for sending errors in JSON format.
-func writeJSONError(w http.ResponseWriter, message string, code int) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(code)
-	json.NewEncoder(w).Encode(ErrorResponse{Error: message})
-}
+
 
 // OIDCAuthenticator stores the token verifier.
 type OIDCAuthenticator struct {
 	Verifier *oidc.IDTokenVerifier
+	logger *slog.Logger
 }
 
 // NewOIDCAuthenticator connects to the OIDC provider (Keycloak) and creates an authenticator.
-func NewOIDCAuthenticator(ctx context.Context, providerURL, clientID string) (*OIDCAuthenticator, error) {
+func NewOIDCAuthenticator(ctx context.Context, providerURL, clientID string, logger *slog.Logger) (*OIDCAuthenticator, error) {
 	if providerURL == "" || clientID == "" {
 		return nil, fmt.Errorf("OIDC URL and ClientID cannot be empty")
 	}
 
 	provider, err := oidc.NewProvider(ctx, providerURL)
 	if err != nil {
-		return nil, fmt.Errorf("Failed to create OIDC provider: %w", err)
+		return nil, fmt.Errorf("failed to create OIDC provider: %w", err)
 	}
 
 	verifier := provider.Verifier(&oidc.Config{ClientID: clientID})
-	return &OIDCAuthenticator{Verifier: verifier}, nil
+
+	if logger == nil {
+		return nil, fmt.Errorf("logger is required")
+	}
+
+	return &OIDCAuthenticator{
+		Verifier: verifier,
+		logger:   logger,
+	}, nil
+}
+
+// writeJSONError is a helper for sending errors in JSON format.
+func writeJSONError(w http.ResponseWriter, message string, code int) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(code)
+	
+	if err := json.NewEncoder(w).Encode(ErrorResponse{Error: message}); err != nil {
+		logger.Error("faled to encode JSON response: %v", err)
+	}
 }
 
 // Middleware - This is an HTTP middleware for token verification.

@@ -50,7 +50,11 @@ func (e *ExternalServiceRuleEngine) CheckTransaction(tx domain.Transaction) doma
 		log.Printf("ERROR: External fraud scoring service call failed: %v", err)
 		return domain.FraudResult{IsFraudulent: false, Reason: ""}
 	}
-	defer resp.Body.Close()
+	defer func() {
+		if err := resp.Body.Close(); err != nil {
+			log.Printf("⚠️  Error closing fraud scoring service: %v", err)
+		}
+	}()
 
 	if resp.StatusCode != http.StatusOK {
 		log.Printf("ERROR: External fraud scoring service returned non-200 status: %s", resp.Status)

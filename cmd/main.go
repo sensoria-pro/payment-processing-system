@@ -105,7 +105,7 @@ func main() {
 	transactionService := app.NewTransactionService(repo, broker)
 	transactionHandler := httphandler.NewTransactionHandler(transactionService, logger)
 
-	authHandler := httphandler.NewAuthHandler(jwtSecret)
+	authHandler := httphandler.NewAuthHandler(logger, jwtSecret)
 
 	
 
