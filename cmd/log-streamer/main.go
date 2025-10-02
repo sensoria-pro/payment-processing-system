@@ -57,7 +57,7 @@ func main() {
 	}
 	defer func() {
 		if err := cli.Close(); err != nil {
-			log.Printf("⚠️  Error closing Docker client: %v", err)
+			log.Printf("error closing Docker client: %v", err)
 		}
 	}()
 

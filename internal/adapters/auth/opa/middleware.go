@@ -80,7 +80,12 @@ func (m *Middleware) Authorize(next http.Handler) http.Handler {
 			http.Error(w, "Authorization service unavailable", http.StatusServiceUnavailable)
 			return
 		}
-		defer resp.Body.Close()
+
+		defer func() {
+			if err := resp.Body.Close(); err != nil {
+				m.logger.Error("Failed to close response body", "ERROR",err)
+			}
+		}()
 
 		var opaResp OPAResponse
 		if err := json.NewDecoder(resp.Body).Decode(&opaResp); err != nil {

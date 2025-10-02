@@ -81,7 +81,12 @@ func sendRequest(url string) {
 		log.Printf("ERROR: failed to send request: %v", err)
 		return
 	}
-	defer resp.Body.Close()
+
+	defer func() {
+		if err := resp.Body.Close(); err != nil {
+			log.Printf("Failed to close response body","ERROR", err)
+		}
+	}()
 
 	if resp.StatusCode != http.StatusAccepted {
 		log.Printf("WARN: received non-202 status code: %d", resp.StatusCode)
