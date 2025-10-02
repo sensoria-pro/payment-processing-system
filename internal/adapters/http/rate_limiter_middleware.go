@@ -9,13 +9,12 @@ import (
 	"payment-processing-system/internal/core/ports"
 )
 
-// RateLimiterMiddleware - это middleware для ограничения частоты запросов.
+// RateLimiterMiddleware - This is a middleware for limiting the request rate.
 type RateLimiterMiddleware struct {
 	repo   ports.RateLimiterRepository
 	logger *slog.Logger
 }
-
-// NewRateLimiterMiddleware создает новый экземпляр middleware.
+// NewRateLimiterMiddleware creates a new middleware instance.
 func NewRateLimiterMiddleware(repo ports.RateLimiterRepository, logger *slog.Logger) *RateLimiterMiddleware {
 	return &RateLimiterMiddleware{
 		repo:   repo,
@@ -23,14 +22,14 @@ func NewRateLimiterMiddleware(repo ports.RateLimiterRepository, logger *slog.Log
 	}
 }
 
-// Handler является основной функцией middleware.
+// Handler is the main function of the middleware.
 func (m *RateLimiterMiddleware) Handler(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// Используем IP-адрес клиента как ключ для ограничения.
+		// Use the client's IP address as the key for restriction.
 		ip, _, err := net.SplitHostPort(r.RemoteAddr)
 		if err != nil {
-			m.logger.Error("не удалось получить IP-адрес клиента", "error", err)
-			// Если не можем определить IP, пропускаем запрос, чтобы не блокировать легитимных пользователей.
+			m.logger.Error("failed to obtain client IP address", "ERROR", err)
+			// If we can't determine the IP, we skip the request so as not to block legitimate users.
 			next.ServeHTTP(w, r)
 			return
 		}
@@ -39,23 +38,23 @@ func (m *RateLimiterMiddleware) Handler(next http.Handler) http.Handler {
 		limit := 100               // 100 запросов
 		window := 1 * time.Minute // в минуту
 
-		// Проверяем, разрешен ли запрос.
+		// Check if the request is allowed.
 		allowed, err := m.repo.IsAllowed(r.Context(), ip, limit, window)
 		if err != nil {
-			m.logger.Error("ошибка при проверке rate limit в Redis", "error", err)
-			// "Fail-open": Если наш rate limiter (Redis) не работает, мы не должны
-			// блокировать весь трафик. Лучше пропустить запрос, чем полностью отказать в обслуживании.
+			m.logger.Error("ошибка при проверке rate limit в Redis", "ERROR", err)
+			// "Fail-open": If our rate limiter (Redis) is not working, we should not
+			// Block all traffic. It's better to allow a request than to deny service completely.
 			next.ServeHTTP(w, r)
 			return
 		}
 
 		if !allowed {
-			// Если лимит превышен, возвращаем ошибку 429 Too Many Requests.
+			// If the limit is exceeded, return the error 429 Too Many Requests.
 			writeJSONError(w, "Too Many Requests", http.StatusTooManyRequests)
 			return
 		}
 
-		// Если всё в порядке, передаем управление следующему обработчику.
+		// If everything is in order, pass control to the next handler.
 		next.ServeHTTP(w, r)
 	})
 }

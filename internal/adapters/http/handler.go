@@ -55,6 +55,6 @@ func (h *TransactionHandler) HandleCreateTransaction(w http.ResponseWriter, r *h
 	
 	if err := json.NewEncoder(w).Encode(map[string]string{"transaction_id": tx.ID.String()}); err != nil {
 		// use the logger that came through the structure.
-		h.logger.Error("failed to write json response", "error", err)
+		h.logger.Error("failed to write json response", "ERROR", err)
 	}
 }

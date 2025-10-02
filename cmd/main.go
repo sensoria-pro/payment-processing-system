@@ -31,7 +31,7 @@ func main() {
 	logger := observability.SetupLogger(cfg.App.Env)
 	logger.Info("The application is launched", "env", cfg.App.Env)
 	if err != nil {
-		logger.Error("Failed to load config", "error", err)
+		logger.Error("Failed to load config", "ERROR", err)
 		os.Exit(1)
 	}
 
@@ -45,7 +45,7 @@ func main() {
 	// --- 2. Setting up Observability ---
 	shutdownTracer, err := observability.InitTracer(cfg.Jaeger.Port, "payment-gateway")
 	if err != nil {
-		logger.Error("Failed to initialize tracing", "error", err)
+		logger.Error("Failed to initialize tracing", "ERROR", err)
 		os.Exit(1)
 	}
 	defer shutdownTracer(context.Background())
@@ -70,7 +70,7 @@ func main() {
 	// Connecting to PostgreSQL
 	repo, err := postgres.NewRepository(ctx, cfg.Postgres.DSN)
 	if err != nil {
-		logger.Error("failed to connect to postgres", "error", err)
+		logger.Error("failed to connect to postgres", "ERROR", err)
 		os.Exit(1)
 	}
 	// Deferred block for closing PostgreSQL repository
@@ -81,7 +81,7 @@ func main() {
 	// Initializing the Redis client
 	rateLimiterRepo, err := redis.NewRateLimiterAdapter(cfg.Redis.Addr)
     if err != nil {
-        logger.Error("Failed to connect to Redis", "error", err)
+        logger.Error("Failed to connect to Redis", "ERROR", err)
         os.Exit(1)
     }
     defer rateLimiterRepo.Close()
@@ -95,7 +95,7 @@ func main() {
 	//TODO: Создаем заглушку для Kafka (для локальной разработки)
 	//broker, err := mock.NewBroker(cfg.Kafka.BootstrapServers, cfg.Kafka.Topic)
 	if err != nil {
-		logger.Error("Failed to create kafka broker", "error", err)
+		logger.Error("Failed to create kafka broker", "ERROR", err)
 		os.Exit(1)
 	}
 	defer broker.Close()
@@ -128,8 +128,8 @@ func main() {
 	// Health check endpoint
 	r.Get("/health", func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
-		if _, writeErr := w.Write([]byte(`{"status": "healthy", "service": "payment-gateway"}`)); writeErr != nil {
-			logger.Error("Failed to write health response", "error", writeErr)
+		if _, err := w.Write([]byte(`{"status": "healthy", "service": "payment-gateway"}`)); err != nil {
+			logger.Error("Failed to write health response", "ERROR", err)
 		}
 	})
 	// Transaction endpoint
@@ -157,7 +157,7 @@ func main() {
 	// 			return
 	// 		}
 	// 		if _, writeErr := w.Write([]byte("Your user ID: " + userID)); writeErr != nil {
-	// 			logger.Error("Failed to write profile response", "error", writeErr)
+	// 			("Failed to write profile response", "error", writeErr)
 	// 		}
 	// 	})
 	// })
@@ -177,7 +177,7 @@ func main() {
 		defer wg.Done()
 		logger.Info("starting server", "port", cfg.Server.Port)
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			logger.Error("server failed to start", "error", err)
+			logger.Error("server failed to start", "ERROR", err)
 			os.Exit(1)
 		}
 	}()
@@ -194,7 +194,7 @@ func main() {
 	defer shutdownCancel()
 
 	if err := srv.Shutdown(shutdownCtx); err != nil {
-		logger.Error("server shutdown failed", "error", err)
+		logger.Error("server shutdown failed", "ERROR", err)
 	}
 
 	logger.Info("server exited properly")

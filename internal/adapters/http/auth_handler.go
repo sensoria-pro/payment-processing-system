@@ -79,6 +79,6 @@ func (h *AuthHandler) HandleLogin(w http.ResponseWriter, r *http.Request) {
 
 	if err := json.NewEncoder(w).Encode(LoginResponse{Token: tokenString}); err != nil {
 		// If we can't send a response, we log it
-		h.logger.Error("failed to write json response", "error", err)
+		h.logger.Error("failed to write json response", "ERROR", err)
 	}
 }

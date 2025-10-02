@@ -59,7 +59,7 @@ func (m *Middleware) Authorize(next http.Handler) http.Handler {
 
 		inputBytes, err := json.Marshal(map[string]interface{}{"input": input})
 		if err != nil {
-			m.logger.Error("Failed to create OPA request", "error", err)
+			m.logger.Error("Failed to create OPA request", "ERROR", err)
 			http.Error(w, "Internal server error", http.StatusInternalServerError)
 			return
 		}
@@ -68,7 +68,7 @@ func (m *Middleware) Authorize(next http.Handler) http.Handler {
 		// The URL typically looks like http://opa:8181/v1/data/httpapi/authz
 		req, err := http.NewRequestWithContext(r.Context(), "POST", m.opaURL, bytes.NewBuffer(inputBytes))
 		if err != nil {
-			m.logger.Error("Failed to create OPA request", "error", err)
+			m.logger.Error("Failed to create OPA request", "ERROR", err)
 			http.Error(w, "Internal server error", http.StatusInternalServerError)
 			return
 		}
@@ -76,7 +76,7 @@ func (m *Middleware) Authorize(next http.Handler) http.Handler {
 
 		resp, err := m.client.Do(req)
 		if err != nil {
-			m.logger.Error("error accessing OPA", "error", err)
+			m.logger.Error("error accessing OPA", "ERROR", err)
 			http.Error(w, "Authorization service unavailable", http.StatusServiceUnavailable)
 			return
 		}
@@ -84,7 +84,7 @@ func (m *Middleware) Authorize(next http.Handler) http.Handler {
 
 		var opaResp OPAResponse
 		if err := json.NewDecoder(resp.Body).Decode(&opaResp); err != nil {
-			m.logger.Error("Unable to decrypt response from OPA", "error", err)
+			m.logger.Error("Unable to decrypt response from OPA", "ERROR", err)
 			http.Error(w, "Internal server error", http.StatusInternalServerError)
 			return
 		}

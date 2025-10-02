@@ -58,7 +58,7 @@ func writeJSONError(w http.ResponseWriter, message string, code int) {
 	w.WriteHeader(code)
 	
 	if err := json.NewEncoder(w).Encode(ErrorResponse{Error: message}); err != nil {
-		logger.Error("faled to encode JSON response: %v", err)
+		logger.Error("Failed to encode JSON response", "ERROR", err)
 	}
 }
 
