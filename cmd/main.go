@@ -84,7 +84,13 @@ func main() {
         logger.Error("Failed to connect to Redis", "ERROR", err)
         os.Exit(1)
     }
-    defer rateLimiterRepo.Close()
+
+	defer func() {
+		if err := rateLimiterRepo.Close(); err != nil {
+			logger.Error("error closing Redis connection", "ERROR", err)
+		}
+	}()
+
     logger.Info("successfully connected to redis")
 	rateLimiterMiddleware := httphandler.NewRateLimiterMiddleware(rateLimiterRepo, logger)
 
@@ -99,6 +105,11 @@ func main() {
 		os.Exit(1)
 	}
 	defer broker.Close()
+	// defer func() {
+	// 	if err := broker.Close(); err != nil {
+	// 		logger.Error("error closing Redis connection", "ERROR", err)
+	// 	}
+	// }()
 	logger.Info("kafka broker created")
 
 	// Dependency Injection: "Injecting" adapters into the kernel

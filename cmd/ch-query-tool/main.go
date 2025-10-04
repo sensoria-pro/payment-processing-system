@@ -47,6 +47,7 @@ func main() {
 				fmt.Fprintf(w, "%s\t%s\t%s\n", id, reason, processedAt.Format(time.RFC3339))
 			}
 			w.Flush()
+			
 		},
 	}
 
@@ -59,7 +60,12 @@ func main() {
 			limit, _ := cmd.Flags().GetInt("limit")
 
 			conn := connect(dsn)
-			defer conn.Close()
+
+			defer func() {
+				if err := conn.Close(); err != nil {
+					log.Fatalf("Не удалось закрыть ClickHouse connection: %v", err)
+				}
+			}()
 
 			// Forming a SQL query for data aggregation
 			query := "SELECT card_hash, count(*) AS total FROM fraud_reports GROUP BY card_hash ORDER BY total DESC LIMIT ?"

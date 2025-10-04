@@ -36,7 +36,11 @@ func main() {
 			if err != nil {
 				log.Fatalf("Не удалось создать consumer: %v", err)
 			}
-			defer c.Close()
+			defer func() {
+				if err := c.Close(); err != nil {
+					log.Fatalf("Не удалось закрыть consumer: %v", err)
+				}
+			}()
 
 			if err := c.SubscribeTopics([]string{dlqTopic}, nil); err != nil {
 				log.Fatalf("Ошибка подписки на топик: %v", err)
@@ -83,7 +87,12 @@ func main() {
 			if err != nil {
 				log.Fatalf("Не удалось создать consumer: %v", err)
 			}
-			defer c.Close()
+
+			defer func() {
+				if err := c.Close(); err != nil {
+					log.Fatalf("Не удалось закрыть consumer: %v", err)
+				}
+			}()
 
 			// Producer for sending message back to the main topic
 			p, err := kafka.NewProducer(&kafka.ConfigMap{"bootstrap.servers": kafkaBrokers})
