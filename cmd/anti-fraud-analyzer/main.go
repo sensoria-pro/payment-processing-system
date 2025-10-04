@@ -46,7 +46,12 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to create Kafka consumer: %s", err)
 	}
-	defer consumer.Close()
+
+	defer func() {
+		if err := consumer.Close(); err != nil {
+			log.Fatalf("Не удалось закрыть Kafka consumer: %v", err)
+		}
+	}()
 
 	// Kafka Producer: Used exclusively for sending messages to the DLQ.
 	producer, err := kafka.NewProducer(&kafka.ConfigMap{"bootstrap.servers": kafkaBootstrapServers})
@@ -54,13 +59,23 @@ func main() {
 		log.Fatalf("Failed to create Kafka producer: %s", err)
 	}
 	defer producer.Close()
+	// defer func() {
+	// 	if err := producer.Close(); err != nil {
+	// 		log.Fatalf("Failed to close Kafka producer: %v", err)
+	// 	}
+	// }()
 
 	// ClickHouse Client: For writing fraud analysis results.
 	chConn, err := clickhouse.Open(&clickhouse.Options{Addr: []string{clickhouseAddr}})
 	if err != nil {
 		log.Fatalf("Failed to connect to ClickHouse: %v", err)
 	}
-	defer chConn.Close()
+
+	defer func() {
+		if err := chConn.Close(); err != nil {
+			log.Fatalf("Не удалось закрыть ClickHouse connection: %v", err)
+		}
+	}()
 
 	// Redis Client: Dependency for our caching rule engine.
 	rdb := redis.NewClient(&redis.Options{Addr: redisAddr})

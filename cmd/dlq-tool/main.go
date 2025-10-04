@@ -46,8 +46,14 @@ func main() {
 				log.Fatalf("Ошибка подписки на топик: %v", err)
 			}
 			w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
-			fmt.Fprintln(w, "OFFSET\tKEY\tERROR_TYPE\tERROR_STRING")
-			fmt.Fprintln(w, "------\t---\t----------\t------------")
+			
+			if _, err := fmt.Fprintln(w, "OFFSET\tKEY\tERROR_TYPE\tERROR_STRING"); err != nil {
+				log.Fatalf("Не удалось закрыть writer %v", err)
+			}
+			
+			if _, err := fmt.Fprintln(w, "------\t---\t----------\t------------"); err != nil {
+				log.Fatalf("Не удалось закрыть writer %v", err)
+			}
 
 			msgCount := 0
 			for msgCount < limit {
@@ -60,10 +66,15 @@ func main() {
 					break
 				}
 				errorType, errorString := getErrorHeaders(msg.Headers)
-				fmt.Fprintf(w, "%s\t%s\t%s\t%s\n", msg.TopicPartition, string(msg.Key), errorType, errorString)
+				
+				if _, err := fmt.Fprintf(w, "%s\t%s\t%s\t%s\n", msg.TopicPartition, string(msg.Key), errorType, errorString); err != nil {
+					log.Fatalf("Не удалось закрыть writer %v", err)
+				}
 				msgCount++
 			}
-			w.Flush()
+			if err := w.Flush(); err != nil {
+				log.Fatalf("Не удалось закрыть writer: %v", err)
+			}
 		},
 	}
 	viewCmd.Flags().Int("limit", 10, "Количество сообщений для просмотра")
@@ -100,10 +111,19 @@ func main() {
 				log.Fatalf("Не удалось создать producer: %v", err)
 			}
 			defer p.Close()
+			// defer func() {
+			// 	if err := p.Close(); err != nil {
+			// 		log.Printf("Ошибка при закрытии producer: %v", err)
+			// 	}
+			// }()
 
 			// specify the specific partition and offset
 			tp := kafka.TopicPartition{Topic: &dlqTopic, Partition: int32(partition), Offset: kafka.Offset(offset)}
-			c.Assign([]kafka.TopicPartition{tp})
+			
+			if err := c.Assign([]kafka.TopicPartition{tp}); err != nil {
+				log.Fatalf("Не удалось назначить раздел %v\n", err)
+			}
+
 
 			// Read exactly one message
 			msg, err := c.ReadMessage(5 * time.Second)
@@ -117,8 +137,12 @@ func main() {
 				Value:          msg.Value,
 				Key:            msg.Key,
 			}
-			p.Produce(retryMsg, nil)
+			
+			if err := p.Produce(retryMsg, nil); err != nil {
+				log.Fatalf("Не удалось создать сообщение: %v", err)
+			}
 			p.Flush(5000)
+			
 			fmt.Println("Сообщение успешно отправлено на повторную обработку.")
 		},
 	}

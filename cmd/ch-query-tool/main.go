@@ -24,29 +24,56 @@ func main() {
 		Short: "Get suspicious transactions",
 		Run: func(_ *cobra.Command, _ []string) {
 			conn := connect(dsn)
-			defer conn.Close()
+			
+			defer func() {
+				if err := conn.Close(); err != nil {
+					log.Fatalf("Не удалось закрыть ClickHouse connection: %v", err)
+				}
+			}()
 
 			query := "SELECT transaction_id, reason, processed_at FROM fraud_reports WHERE is_fraudulent = 1 ORDER BY processed_at DESC LIMIT 20"
 			rows, err := conn.Query(context.Background(), query)
 			if err != nil {
 				log.Fatalf("Query failed: %v", err)
 			}
+			
+			defer func() {
+				if err := rows.Close(); err != nil{
+					log.Fatalf("Не удалось закрыть: %v", err)
+				}
+			}()
 
 			rows, err = conn.Query(context.Background(), "SELECT transaction_id, reason, processed_at FROM fraud_reports WHERE is_fraudulent = 1 ORDER BY processed_at DESC LIMIT 20")
 			if err != nil {
 				log.Fatal(err)
 			}
+			defer func() {
+				if err := rows.Close(); err != nil{
+					log.Fatalf("Не удалось закрыть: %v", err)
+				}
+			}()
+
 			w := tabwriter.NewWriter(os.Stdout, 0, 0, 3, ' ', 0)
-			fmt.Fprintln(w, "TRANSACTION ID\tREASON\tPROCESSED AT")
+			
+			if _, err := fmt.Fprintln(w, "TRANSACTION ID\tREASON\tPROCESSED AT"); err != nil {
+				log.Fatalf("Не удалось закрыть writer: %v", err)
+			}
 			for rows.Next() {
 				var id, reason string
 				var processedAt time.Time
 				if err := rows.Scan(&id, &reason, &processedAt); err != nil {
 					log.Fatal(err)
 				}
-				fmt.Fprintf(w, "%s\t%s\t%s\n", id, reason, processedAt.Format(time.RFC3339))
+				
+
+				if _, err := fmt.Fprintf(w, "%s\t%s\t%s\n", id, reason, processedAt.Format(time.RFC3339)); err != nil {
+					log.Fatalf("Не удалось закрыть writer %v", err)
+				}
 			}
-			w.Flush()
+			
+			if err := w.Flush(); err != nil {
+				log.Fatalf("Не удалось закрыть writer: %v", err)
+			}
 			
 		},
 	}
@@ -76,16 +103,25 @@ func main() {
 
 			// Using tabwriter for beautiful tabular output
 			w := tabwriter.NewWriter(os.Stdout, 0, 0, 3, ' ', 0)
-			fmt.Fprintln(w, "CARD HASH\tTRANSACTION COUNT")
+			
+			if _, err := fmt.Fprintln(w, "CARD HASH\tTRANSACTION COUNT"); err != nil {
+				log.Fatalf("Не удалось закрыть writer %v", err)
+			}
+
 			for rows.Next() {
 				var cardHash string
 				var total uint64
 				if err := rows.Scan(&cardHash, &total); err != nil {
 					log.Fatal(err)
 				}
-				fmt.Fprintf(w, "%s\t%d\n", cardHash, total)
+				
+				if _, err := fmt.Fprintf(w, "%s\t%d\n", cardHash, total); err != nil {
+					log.Fatalf("Не удалось закрыть writer %v", err)
+				}
 			}
-			w.Flush()
+			if err := w.Flush(); err != nil {
+				log.Fatalf("Не удалось закрыть writer: %v", err)
+			}
 		},
 	}
 	// Add the --limit flag to the top-cards command with a default value of 10
