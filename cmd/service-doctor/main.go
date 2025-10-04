@@ -134,7 +134,12 @@ func checkHTTPHealth(path string) func(context.Context, *Config) error {
 		if err != nil {
 			return err
 		}
-		defer resp.Body.Close()
+		
+			defer func() {
+				if err := resp.Body.Close(); err != nil {
+					fmt.Printf("error closing HTTP response body: %v", err)
+				}
+			}()
 
 		if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 			return fmt.Errorf("bad status: %s", resp.Status)
@@ -149,7 +154,14 @@ func checkTCPHealth(ctx context.Context, cfg *Config) error {
 	if err != nil {
 		return err
 	}
-	return conn.Close()
+
+	defer func() {
+		if err := conn.Close(); err != nil {
+			fmt.Printf("error closing TCP connection: %v", err)
+		}
+	}()
+	
+	return nil
 }
 
 func checkPostgres(ctx context.Context, cfg *Config) error {
@@ -158,6 +170,11 @@ func checkPostgres(ctx context.Context, cfg *Config) error {
 		return err
 	}
 	defer conn.Close()
+	// defer func() {
+	// 	if err := conn.Close(); err != nil {
+	// 		fmt.Printf("error closing PostgreSQL connection: %v\n", err)
+	// 	}
+	// }()
 	return conn.Ping(ctx)
 }
 
@@ -184,7 +201,13 @@ func checkClickHouse(ctx context.Context, cfg *Config) error {
 	if err != nil {
 		return err
 	}
-	defer conn.Close()
+	
+	defer func() {
+		if err := conn.Close(); err != nil {
+			fmt.Printf("error closing ClickHouse connection: %v", err)
+		}
+	}()
+	
 	return conn.Ping(ctx)
 }
 
