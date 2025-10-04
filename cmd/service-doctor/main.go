@@ -25,7 +25,7 @@ type Config struct {
 	KafkaBrokers   string
 	ClickhouseAddr string
 	KeycloakAddr   string
-	VaultAddr      string
+	//VaultAddr      string
 	OpaAddr        string
 }
 
@@ -49,7 +49,7 @@ func loadConfig() *Config {
 		KafkaBrokers:   getEnv("KAFKA_BROKERS", "localhost:9092"),
 		ClickhouseAddr: getEnv("CLICKHOUSE_ADDR", "localhost:9000"),
 		KeycloakAddr:   getEnv("KEYCLOAK_ADDR", "http://localhost:8888"),
-		VaultAddr:      getEnv("VAULT_ADDR", "http://localhost:8200"),
+		//VaultAddr:      getEnv("VAULT_ADDR", "http://localhost:8200"),
 		OpaAddr:        getEnv("OPA_ADDR", "http://localhost:8181"),
 	}
 }
@@ -118,7 +118,7 @@ func checkHTTPHealth(path string) func(context.Context, *Config) error {
 		case "/health/ready":
 			url = cfg.KeycloakAddr + path
 		case "/v1/sys/health":
-			url = cfg.VaultAddr + path
+			//url = cfg.VaultAddr + path
 		case "/health":
 			url = cfg.OpaAddr + path
 		default:

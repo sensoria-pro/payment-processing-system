@@ -84,7 +84,7 @@ func sendRequest(url string) {
 
 	defer func() {
 		if err := resp.Body.Close(); err != nil {
-			log.Printf("Failed to close response body","ERROR", err)
+			log.Printf("Failed to close response body : %v", err)
 		}
 	}()
 
