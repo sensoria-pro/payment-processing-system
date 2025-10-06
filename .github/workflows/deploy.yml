@@ -19,7 +19,7 @@ jobs:
       - name: Set up Go # 2. Setting up the Go environment
         uses: actions/setup-go@v6
         with:
-          go-version: '1.22'
+          go-version: '1.24'
 
       - name: Run Linter (golangci-lint) # 3. Run the linter (code style check)
         uses: golangci/golangci-lint-action@v8
