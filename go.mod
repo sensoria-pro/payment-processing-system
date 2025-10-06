@@ -7,11 +7,11 @@ toolchain go1.24.6
 require (
 	github.com/ClickHouse/clickhouse-go/v2 v2.40.3
 	github.com/confluentinc/confluent-kafka-go/v2 v2.11.1
-	github.com/coreos/go-oidc/v3 v3.15.0
-	github.com/docker/docker v28.4.0+incompatible
+	github.com/coreos/go-oidc/v3 v3.16.0
+	github.com/docker/docker v28.5.0+incompatible
 	github.com/fatih/color v1.18.0
 	github.com/go-chi/chi/v5 v5.2.3
-	github.com/go-faker/faker/v4 v4.6.2
+	github.com/go-faker/faker/v4 v4.7.0
 	github.com/golang-jwt/jwt/v5 v5.3.0
 	github.com/google/uuid v1.6.0
 	github.com/jackc/pgx/v5 v5.7.6
@@ -44,7 +44,7 @@ require (
 	github.com/felixge/httpsnoop v1.0.4 // indirect
 	github.com/go-faster/city v1.0.1 // indirect
 	github.com/go-faster/errors v0.7.1 // indirect
-	github.com/go-jose/go-jose/v4 v4.1.1 // indirect
+	github.com/go-jose/go-jose/v4 v4.1.3 // indirect
 	github.com/go-logr/logr v1.4.3 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.27.2 // indirect
