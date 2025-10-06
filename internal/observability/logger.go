@@ -15,7 +15,7 @@ const loggerKey = contextKey("logger")
 func SetupLogger(env string) *slog.Logger {
 	var logger *slog.Logger
 	switch env {
-	case "development":
+	case  "development", "dev":
 		logger = slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}))
 	default:
 		logger = slog.New(slog.NewJSONHandler(os.Stdout, nil))
