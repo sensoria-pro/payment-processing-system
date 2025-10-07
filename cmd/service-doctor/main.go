@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"log/slog"
 	"sync"
 	"time"
 
@@ -67,25 +68,25 @@ func main() {
 	// Формируем список проверок, используя данные из config.yaml
 	checks := []Check{
 		{Name: "Payment Gateway", Func: func(ctx context.Context) error {
-			return checkHTTPHealth(ctx, cfg.Server.Port+"/metrics")
+			return checkHTTPHealth(ctx, cfg.Server.Port+"/metrics", logger)
 		}},
 		{Name: "PostgreSQL", Func: func(ctx context.Context) error {
-			return checkPostgres(ctx, cfg.Postgres.DSN)
+			return checkPostgres(ctx, cfg.Postgres.DSN, logger)
 		}},
 		{Name: "Redis", Func: func(ctx context.Context) error {
-			return checkRedis(ctx, cfg.Redis.Addr)
+			return checkRedis(ctx, cfg.Redis.Addr, logger)
 		}},
 		{Name: "Kafka Cluster", Func: func(ctx context.Context) error {
-			return checkKafka(ctx, strings.Split(cfg.Kafka.BootstrapServers, ","))
+			return checkKafka(ctx, strings.Split(cfg.Kafka.BootstrapServers, ","), logger)
 		}},
 		{Name: "ClickHouse", Func: func(ctx context.Context) error {
-			return checkClickHouse(ctx, cfg.ClickHouse.Addr)
+			return checkClickHouse(ctx, cfg.ClickHouse.Addr, logger)
 		}},
 		{Name: "Keycloak", Func: func(ctx context.Context) error {
-			return checkHTTPHealth(ctx, cfg.OIDC.URL+"/health/ready")
+			return checkHTTPHealth(ctx, cfg.OIDC.URL+"/health/ready", logger)
 		}},
 		{Name: "Open Policy Agent", Func: func(ctx context.Context) error {
-			return checkHTTPHealth(ctx, cfg.OPA.URL+"/health")
+			return checkHTTPHealth(ctx, cfg.OPA.URL+"/health", logger)
 		}},
 		// Добавляем проверку для других наших сервисов, если у них есть health-check
 		// {Name: "Anti-Fraud Analyzer", Func: func(ctx context.Context) error { return checkHTTPHealth(ctx, "http://localhost:XXXX/healthz") }},
@@ -149,7 +150,7 @@ func main() {
 
 // --- Functions for checks ---
 
-func checkHTTPHealth(ctx context.Context, url string) error {
+func checkHTTPHealth(ctx context.Context, url string, logger *slog.Logger) error {
 	// Добавляем http://, если его нет
 	if !strings.HasPrefix(url, "http") {
 		url = "http://" + url
@@ -164,7 +165,12 @@ func checkHTTPHealth(ctx context.Context, url string) error {
 	if err != nil {
 		return err
 	}
-	defer resp.Body.Close()
+
+	defer func() {
+		if err := resp.Body.Close(); err != nil {
+			logger.Error("не удалось закрыть Http соединение", "ERROR", err)
+		}
+	}()
 
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 		return fmt.Errorf("некорректный статус: %s", resp.Status)
@@ -232,23 +238,32 @@ func checkHTTPHealth(ctx context.Context, url string) error {
 // }
 
 
-func checkPostgres(ctx context.Context, dsn string) error {
+func checkPostgres(ctx context.Context, dsn string, logger *slog.Logger) error {
 	conn, err := pgx.Connect(ctx, dsn)
 	if err != nil {
 		return err
 	}
-	defer conn.Close(ctx)
+
+	defer func() {
+		if err := conn.Close(ctx); err != nil {
+			logger.Error("не удалось закрыть соединение Postgres", "ERROR", err)
+		}
+	}()
 	return conn.Ping(ctx)
 }
 
-func checkRedis(ctx context.Context, addr string) error {
+func checkRedis(ctx context.Context, addr string, logger *slog.Logger) error {
 	rdb := redis.NewClient(&redis.Options{Addr: addr})
-	defer rdb.Close()
+	defer func() {
+		if err := rdb.Close(); err != nil {
+			logger.Error("не удалось закрыть Redis", "ERROR", err)
+		}
+	}()
 	return rdb.Ping(ctx).Err()
 }
 
 // Improved Kafka Validation via Admin Client
-func checkKafka(ctx context.Context, brokers []string) error {
+func checkKafka(ctx context.Context, brokers []string, logger *slog.Logger) error {
 	client, err := kgo.NewClient(
 		kgo.SeedBrokers(brokers...),
 		kgo.DialTimeout(5*time.Second),
@@ -257,12 +272,13 @@ func checkKafka(ctx context.Context, brokers []string) error {
 		return err
 	}
 	defer client.Close()
+	
 
 	// Ping проверяет, что мы можем подключиться к брокерам
 	return client.Ping(ctx)
 }
 
-func checkClickHouse(ctx context.Context, addr string) error {
+func checkClickHouse(ctx context.Context, addr string, logger *slog.Logger) error {
 	conn, err := clickhouse.Open(&clickhouse.Options{
 		Addr: []string{addr},
 		Auth: clickhouse.Auth{
@@ -275,6 +291,11 @@ func checkClickHouse(ctx context.Context, addr string) error {
 	if err != nil {
 		return err
 	}
-	defer conn.Close()
+	//defer conn.Close()
+	defer func() {
+		if err := conn.Close(); err != nil {
+			logger.Error("не удалось закрыть clickhouse", "ERROR", err)
+		}
+	}()
 	return conn.Ping(ctx)
 }

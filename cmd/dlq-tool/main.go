@@ -3,7 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
-
+	"log/slog"
 	"os"
 	"strconv"
 	"strings"
@@ -88,7 +88,11 @@ func main() {
 						return
 					}
 					errorType, errorString := getErrorHeaders(record.Headers)
-					fmt.Fprintf(w, "%d\t%s\t%s\t%s\n", record.Offset, string(record.Key), errorType, errorString)
+					
+					if _, err := fmt.Fprintf(w, "%d\t%s\t%s\t%s\n", record.Offset, string(record.Key), errorType, errorString); err != nil {
+						logger.Error("Не удалось закрыть writer", "ERROR", err)
+					}
+					
 					msgCount++
 				})
 			}
@@ -106,7 +110,7 @@ func main() {
 		
 		Run: func(cmd *cobra.Command, args []string) {
 			targetTopic, _ := cmd.Flags().GetString("target-topic")
-			partition, offset := parsePartitionOffset(args[0])
+			partition, offset := parsePartitionOffset(args[0], logger)
 			logger.Info("повторная отправка сообщения", "from_topic", dlqTopic, "partition", partition, "offset", offset, "to_topic", targetTopic)
 
 			brokers := strings.Split(kafkaBrokers, ",")
@@ -185,18 +189,18 @@ func getErrorHeaders(headers []kgo.RecordHeader) (string, string) {
 }
 
 // parsePartitionOffset парсит строку "partition:offset" в целые числа
-func parsePartitionOffset(arg string) (int, int64) {
+func parsePartitionOffset(arg string, logger *slog.Logger) (int, int64) {
 	parts := strings.Split(arg, ":")
 	if len(parts) != 2 {
-		fmt.Errorf("Неверный формат. Ожидается partition:offset, например, 0:123")
+		logger.Error("Неверный формат. Ожидается partition:offset, например, 0:123")
 	}
 	partition, err := strconv.Atoi(parts[0])
 	if err != nil {
-		fmt.Errorf("Неверный номер партиции: %v", err)
+		logger.Error("Неверный номер партиции", "ERROR", err)
 	}
 	offset, err := strconv.ParseInt(parts[1], 10, 64)
 	if err != nil {
-		fmt.Errorf("Неверный номер offset: %v", err)
+		logger.Error("Неверный номер offset", "ERROR", err)
 	}
 	return partition, offset
 }
