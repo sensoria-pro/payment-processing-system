@@ -4,56 +4,50 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
+	"log/slog"
+	"sync"
+	"time"
 
-	"github.com/confluentinc/confluent-kafka-go/v2/kafka"
+	"github.com/twmb/franz-go/pkg/kgo"
 	"payment-processing-system/internal/core/domain"
-	
 )
 
 // Broker is an implementation of the MessageBroker port for Kafka.
 type Broker struct {
-	producer *kafka.Producer
-	topic    string
+	client *kgo.Client
+	topic  string
+	logger *slog.Logger
+	wg     sync.WaitGroup
 }
 
 // NewBroker creates a new Kafka broker instance.
-func NewBroker(bootstrapServers, topic string) (*Broker, error) {
-	p, err := kafka.NewProducer(&kafka.ConfigMap{
-		"bootstrap.servers": bootstrapServers,
-		"client.id":         "payment-gateway",
-		"acks":              "all", //TODO: Гарантируем, что сообщение получено всеми репликами
-	})
+func NewBroker(bootstrapServers []string, topic string, logger *slog.Logger) (*Broker, error) {
+	opts := []kgo.Opt{
+		kgo.SeedBrokers(bootstrapServers...),
+		kgo.DefaultProduceTopic(topic),
+		kgo.AllowAutoTopicCreation(), //TODO: Удобно для локальной разработки
+		kgo.RequiredAcks(kgo.AllISRAcks()),  //TODO: Гарантируем, что сообщение получено всеми репликами
+		kgo.RecordDeliveryTimeout(10 * time.Second),
+	}
+
+	client, err := kgo.NewClient(opts...)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create kafka producer: %w", err)
+		return nil, fmt.Errorf("не удалось создать kafka-клиент: %w", err)
 	}
 
-	b := &Broker{
-		producer: p,
-		topic:    topic,
+	// Checking the connection
+	if err := client.Ping(context.Background()); err != nil {
+		return nil, fmt.Errorf("не удалось подключиться к kafka: %w", err)
 	}
 
-	// Start a goroutine to handle delivery reports.
-	//!!! This is critical for asynchronous operation.
-	go b.handleDeliveryReports()
-
-	return b, nil
+	return &Broker{
+		client: client,
+		topic:  topic,
+		logger: logger,
+	}, nil
 }
 
-func (b *Broker) handleDeliveryReports() {
-	for e := range b.producer.Events() {
-		switch ev := e.(type) {
-		case *kafka.Message:
-			if ev.TopicPartition.Error != nil {
-				log.Printf("❌ Failed to deliver message: %v\n", ev.TopicPartition)
-			} else {
-				log.Printf("✅ Delivered message to %v\n", ev.TopicPartition)
-			}
-		}
-	}
-}
-
-// PublishTransactionCreated implements the MessageBroker interface method.
+// PublishTransactionCreated publishes an event about the creation of a transaction.
 func (b *Broker) PublishTransactionCreated(ctx context.Context, tx domain.Transaction) error {
 	// Creating a message structure for Kafka
 	message := map[string]interface{}{
@@ -65,29 +59,33 @@ func (b *Broker) PublishTransactionCreated(ctx context.Context, tx domain.Transa
 		"idempotency_key":  tx.IdempotencyKey.String(),
 		"created_at":       tx.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
 	}
-
 	payload, err := json.Marshal(message)
 	if err != nil {
 		return fmt.Errorf("failed to marshal transaction: %w", err)
 	}
 
-	// producer.Produce is an asynchronous call. It does not block execution.
-	err = b.producer.Produce(&kafka.Message{
-		TopicPartition: kafka.TopicPartition{Topic: &b.topic, Partition: kafka.PartitionAny},
-		Key:            []byte(tx.ID.String()), // Use transaction ID as key
-		Value:          payload,
-	}, nil) //TODO: nil - deliveryChan, мы обрабатываем глобально в goroutine
-
-	if err != nil {
-		return fmt.Errorf("failed to produce message to kafka: %w", err)
+	record := &kgo.Record{
+		Key:   []byte(tx.ID.String()),
+		Value: payload,
 	}
+
+	b.wg.Add(1)
+	// Produce sends a record asynchronously.
+	b.client.Produce(ctx, record, func(r *kgo.Record, err error) {
+		defer b.wg.Done()
+		if err != nil {
+			b.logger.Error("не удалось доставить сообщение в kafka", "topic", r.Topic, "error", err)
+		} else {
+			b.logger.Debug("сообщение успешно доставлено в kafka", "topic", r.Topic, "partition", r.Partition, "offset", r.Offset)
+		}
+	})
 
 	return nil
 }
-
-// Close gracefully shutsdown the producer.
+// Close gracefully stops the producer.
 func (b *Broker) Close() {
-	//TODO: Flush ждет, пока все сообщения в очереди будут отправлены.
-	b.producer.Flush(15 * 1000)
-	b.producer.Close()
+	b.logger.Info("ожидание завершения отправки сообщений в kafka...")
+	b.wg.Wait() // Ждём, пока все колбэки отработают
+	b.client.Close()
+	b.logger.Info("kafka-клиент успешно остановлен")
 }

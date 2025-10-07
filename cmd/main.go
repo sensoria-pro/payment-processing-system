@@ -96,10 +96,10 @@ func main() {
 
 	// Create a Kafka producer
 	//TODO: закомментировать для локальной версии тестов
-	broker, err := kafka.NewBroker(cfg.Kafka.BootstrapServers, cfg.Kafka.Topic)
+	broker, err := kafka.NewBroker([]string{cfg.Kafka.BootstrapServers}, cfg.Kafka.Topic, logger)
 
 	//TODO: Создаем заглушку для Kafka (для локальной разработки)
-	//broker, err := mock.NewBroker(cfg.Kafka.BootstrapServers, cfg.Kafka.Topic)
+	//broker, err := mock.NewBroker([]string{cfg.Kafka.BootstrapServers}, cfg.Kafka.Topic, logger)
 	if err != nil {
 		logger.Error("Failed to create kafka broker", "ERROR", err)
 		os.Exit(1)

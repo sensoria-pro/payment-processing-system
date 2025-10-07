@@ -11,6 +11,9 @@ kafka:
   bootstrap_servers: '${KAFKA_BOOTSTRAP_SERVERS:-localhost:9092}'
   topic: 'transactions.created'
 
+clickhouse:
+  addr: '${CLICKHOUSE_ADDR}'  
+
 redis:
   addr: '${REDIS_ADDR}'
 

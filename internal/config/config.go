@@ -27,6 +27,9 @@ type Config struct {
 		BootstrapServers string `yaml:"bootstrap_servers"`
 		Topic            string `yaml:"topic"`
 	} `yaml:"kafka"`
+	ClickHouse struct {
+		Addr string `yaml:"addr"`
+	} `yaml:"clickhouse"`
 	Redis struct {
 		Addr string `yaml:"addr"`
 	} `yaml:"redis"`
