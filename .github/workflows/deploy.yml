@@ -102,7 +102,9 @@ jobs:
             echo ${{ secrets.DOCKERHUB_TOKEN }} | docker login -u ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
             
             # Download the latest versions of the images that we just published
-            docker-compose pull
+            # Нужно учитывать версию на debian машине docker compose 2 версии использует (docker compose) а если 1 версия то (docker-compose)
+
+            docker compose pull
 
             # Restart services. Docker Compose will recreate only those containers whose images have been updated.
-            docker-compose up -d
+            docker compose up -d
