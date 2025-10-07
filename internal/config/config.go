@@ -13,6 +13,13 @@ type AntiFraudConfig struct {
 	FrequencyWindowSeconds int     `yaml:"frequency_window_seconds"`
 }
 
+type ClickHouseConfig struct {
+	Addr     string `yaml:"addr"`
+	Database string `yaml:"database"`
+	User     string `yaml:"user"`
+	Password string `yaml:"password"`
+}
+
 type Config struct {
 	App struct {
 		Env string `yaml:"env"`
@@ -27,9 +34,7 @@ type Config struct {
 		BootstrapServers string `yaml:"bootstrap_servers"`
 		Topic            string `yaml:"topic"`
 	} `yaml:"kafka"`
-	ClickHouse struct {
-		Addr string `yaml:"addr"`
-	} `yaml:"clickhouse"`
+	ClickHouse ClickHouseConfig `yaml:"clickhouse"`
 	Redis struct {
 		Addr string `yaml:"addr"`
 	} `yaml:"redis"`

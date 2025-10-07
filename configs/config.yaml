@@ -12,7 +12,10 @@ kafka:
   topic: 'transactions.created'
 
 clickhouse:
-  addr: '${CLICKHOUSE_ADDR}'  
+  addr: '${CLICKHOUSE_ADDR}'
+  database: '${CLICKHOUSE_DB}'
+	user: '${CLICKHOUSE_USER}'
+	password: '${CLICKHOUSE_PASSWORD}'
 
 redis:
   addr: '${REDIS_ADDR}'

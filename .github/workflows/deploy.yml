@@ -84,7 +84,7 @@ jobs:
     needs: [build-and-test, security-scan]  # Wait for build-and-test and security-scan to complete
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     environment: production
-    
+
     steps:
       - name: Deploy to Production Server
         uses: appleboy/ssh-action@v1.2.2 # 1. Deploy to Production Server
@@ -92,6 +92,7 @@ jobs:
           host: ${{ secrets.PROD_SERVER_HOST }}
           username: ${{ secrets.PROD_SERVER_USERNAME }}
           key: ${{ secrets.PROD_SERVER_SSH_KEY }}
+          passphrase: ${{ secrets.PROD_SSH_PASSPHRASE }}
           script: |
             cd /opt/app
             

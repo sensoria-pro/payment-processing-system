@@ -68,7 +68,7 @@ func main() {
 	// Формируем список проверок, используя данные из config.yaml
 	checks := []Check{
 		{Name: "Payment Gateway", Func: func(ctx context.Context) error {
-			return checkHTTPHealth(ctx, cfg.Server.Port+"/metrics", logger)
+			return checkHTTPHealth(ctx, cfg.Server.Port+"/healthz", logger)
 		}},
 		{Name: "PostgreSQL", Func: func(ctx context.Context) error {
 			return checkPostgres(ctx, cfg.Postgres.DSN, logger)
@@ -80,32 +80,22 @@ func main() {
 			return checkKafka(ctx, strings.Split(cfg.Kafka.BootstrapServers, ","), logger)
 		}},
 		{Name: "ClickHouse", Func: func(ctx context.Context) error {
-			return checkClickHouse(ctx, cfg.ClickHouse.Addr, logger)
+			return checkClickHouse(ctx, cfg.ClickHouse, logger)
 		}},
 		{Name: "Keycloak", Func: func(ctx context.Context) error {
 			return checkHTTPHealth(ctx, cfg.OIDC.URL+"/health/ready", logger)
 		}},
+		// {Name: "HashiCorp Vault", Func: func(ctx context.Context) error {
+		// 	return checkHTTPHealth(ctx, "http://localhost:8200/v1/sys/health", logger)
+		// }},
 		{Name: "Open Policy Agent", Func: func(ctx context.Context) error {
 			return checkHTTPHealth(ctx, cfg.OPA.URL+"/health", logger)
 		}},
 		// Добавляем проверку для других наших сервисов, если у них есть health-check
-		// {Name: "Anti-Fraud Analyzer", Func: func(ctx context.Context) error { return checkHTTPHealth(ctx, "http://localhost:XXXX/healthz") }},
-		// {Name: "Alerter Service", Func: func(ctx context.Context) error { return checkHTTPHealth(ctx, "http://localhost:8081/healthz") }},
+		{Name: "Anti-Fraud Analyzer", Func: func(ctx context.Context) error { return checkHTTPHealth(ctx, "http://localhost:8082/healthz", logger) }},
+		{Name: "Alerter Service", Func: func(ctx context.Context) error { return checkHTTPHealth(ctx, "http://localhost:8081/healthz", logger) }},
 	}
-
-	// checks := []Check{
-	// 	{Name: "Payment Gateway", Func: checkHTTPHealth("/metrics")},
-	// 	{Name: "Anti-Fraud Analyzer", Func: checkTCPHealth},
-	// 	{Name: "Alerter Service", Func: checkHTTPHealth("/alert")},
-	// 	{Name: "PostgreSQL", Func: checkPostgres},
-	// 	{Name: "Redis", Func: checkRedis},
-	// 	{Name: "Kafka Cluster", Func: checkKafka},
-	// 	{Name: "ClickHouse", Func: checkClickHouse},
-	// 	{Name: "Keycloak", Func: checkHTTPHealth("/health/ready")},
-	// 	{Name: "HashiCorp Vault", Func: checkHTTPHealth("/v1/sys/health")},
-	// 	{Name: "Open Policy Agent", Func: checkHTTPHealth("/health")},
-	// }
-
+	
 	var wg sync.WaitGroup
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
@@ -178,66 +168,6 @@ func checkHTTPHealth(ctx context.Context, url string, logger *slog.Logger) error
 	return nil
 }
 
-
-// func checkHTTPHealth(path string) func(context.Context, *Config) error {
-// 	return func(ctx context.Context, cfg *Config) error {
-// 		// Determine URL based on check name
-// 		var url string
-// 		switch path {
-// 		case "/metrics":
-// 			url = cfg.GatewayAPI + path
-// 		case "/alert":
-// 			url = cfg.AlerterAPI + path
-// 		case "/health/ready":
-// 			url = cfg.KeycloakAddr + path
-// 		case "/v1/sys/health":
-// 			//url = cfg.VaultAddr + path
-// 		case "/health":
-// 			url = cfg.OpaAddr + path
-// 		default:
-// 			return fmt.Errorf("unknown http path: %s", path)
-// 		}
-
-// 		req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
-// 		if err != nil {
-// 			return err
-// 		}
-
-// 		resp, err := http.DefaultClient.Do(req)
-// 		if err != nil {
-// 			return err
-// 		}
-		
-// 			defer func() {
-// 				if err := resp.Body.Close(); err != nil {
-// 					fmt.Printf("error closing HTTP response body: %v", err)
-// 				}
-// 			}()
-
-// 		if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-// 			return fmt.Errorf("bad status: %s", resp.Status)
-// 		}
-// 		return nil
-// 	}
-// }
-
-// func checkTCPHealth(ctx context.Context, cfg *Config) error {
-// 	d := net.Dialer{Timeout: 5 * time.Second}
-// 	conn, err := d.DialContext(ctx, "tcp", cfg.AntiFraudAPI)
-// 	if err != nil {
-// 		return err
-// 	}
-
-// 	defer func() {
-// 		if err := conn.Close(); err != nil {
-// 			fmt.Printf("error closing TCP connection: %v", err)
-// 		}
-// 	}()
-	
-// 	return nil
-// }
-
-
 func checkPostgres(ctx context.Context, dsn string, logger *slog.Logger) error {
 	conn, err := pgx.Connect(ctx, dsn)
 	if err != nil {
@@ -278,24 +208,31 @@ func checkKafka(ctx context.Context, brokers []string, logger *slog.Logger) erro
 	return client.Ping(ctx)
 }
 
-func checkClickHouse(ctx context.Context, addr string, logger *slog.Logger) error {
+func checkClickHouse(ctx context.Context, cfg config.ClickHouseConfig, logger *slog.Logger) error {
+	if cfg.Addr == "" {
+		return fmt.Errorf("адрес ClickHouse не указан в конфигурации")
+	}
+
 	conn, err := clickhouse.Open(&clickhouse.Options{
-		Addr: []string{addr},
+		Addr: []string{cfg.Addr},
 		Auth: clickhouse.Auth{
-			// Предполагаем, что для health-check не нужен пароль,
-			//TODO: в проде реализовать
-			Database: "default",
-			Username: "default",
+			// Используем данные из конфигурации
+			Database: cfg.Database,
+			Username: cfg.User,
+			Password: cfg.Password,
 		},
+		DialTimeout: 5 * time.Second, // Добавляем таймаут для надёжности
 	})
 	if err != nil {
-		return err
+		return fmt.Errorf("не удалось открыть соединение: %w", err)
 	}
-	//defer conn.Close()
+
 	defer func() {
 		if err := conn.Close(); err != nil {
-			logger.Error("не удалось закрыть clickhouse", "ERROR", err)
+			logger.Error("не удалось закрыть соединение с ClickHouse", "ERROR", err)
 		}
 	}()
+
+	// Ping проверяет, что соединение установлено и аутентификация прошла успешно
 	return conn.Ping(ctx)
 }
