@@ -3,8 +3,8 @@
 FROM golang:1.24-alpine AS builder
 
 # Arguments we will pass from docker-compose.yml
-ARG SERVICE_NAME
-ARG SERVICE_PATH=./cmd/main.go # Default path if not specified
+ARG SERVICE_NAME=payment-processing-system
+ARG SERVICE_PATH=./cmd/main.go
 
 # Set the working directory
 WORKDIR /app
@@ -18,6 +18,13 @@ RUN go mod download
 
 # Copy the rest of the source code
 COPY . .
+
+COPY cmd/ cmd/
+COPY internal/ internal/
+COPY configs/ configs/ 
+
+# Проверь, что configs/ теперь в /app/configs
+RUN ls -la /app/configs
 
 # Build the application using arguments
 RUN CGO_ENABLED=0 GOOS=linux go build -a -o /app/${SERVICE_NAME} ${SERVICE_PATH}
@@ -36,8 +43,9 @@ WORKDIR /home/appuser
 
 # Copy ONLY the compiled binary from the build stage
 # and immediately assign it the correct owner
-COPY --from=builder /app/${SERVICE_NAME} .
 COPY --from=builder /app/configs ./configs
+
+COPY --from=builder /app/${SERVICE_NAME} .
 
 # Open the port (informative, real mapping in docker-compose)
 EXPOSE 8080
