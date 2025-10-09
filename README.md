@@ -346,7 +346,7 @@ curl http://localhost:8080/transaction/{transaction_id}
 ```yaml
 # Docker Compose с масштабированием
 services:
-  payment-gateway:
+  payment-processing-system:
     deploy:
       replicas: 3
     environment:

@@ -3,7 +3,7 @@
 FROM golang:1.24-alpine AS builder
 
 # Arguments we will pass from docker-compose.yml
-#ARG SERVICE_NAME=payment-processing-system
+ARG SERVICE_NAME=payment-processing-system
 ARG SERVICE_PATH=./cmd/main.go
 
 # Set the working directory
@@ -45,11 +45,10 @@ WORKDIR /home/appuser
 # and immediately assign it the correct owner
 COPY --from=builder /app/configs ./configs
 
-COPY --from=builder /app/binary ./app
-
+COPY --from=builder /app/payment-processing-system .
 
 # Open the port (informative, real mapping in docker-compose)
 EXPOSE 8080
 
 # Launch the application
-CMD ["./app"]
+CMD payment-processing-system

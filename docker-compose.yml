@@ -61,33 +61,36 @@ services:
 
 # --- Microservices ---
   payment-gateway:
-    build:
-      context: . # Dockerfile must be in the root
-      dockerfile: Dockerfile
-      args:
-        SERVICE_NAME: payment-gateway
-        SERVICE_PATH: ./cmd/main.go
+    image: tonygilman/payment-gateway:latest
+    # build:
+    #   context: . # Dockerfile must be in the root
+    #   dockerfile: Dockerfile
+    #   args:
+    #     SERVICE_NAME: payment-gateway
+    #     SERVICE_PATH: ./cmd/main.go
     ports: ['${APP_PORT:-8080}:8080']
     env_file: [.env]
     depends_on: { postgres: { condition: service_healthy }, kafka: { condition: service_started }, redis: { condition: service_started }, postgres-migrator: { condition: service_completed_successfully } }
 
   anti-fraud-analyzer:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      args:
-        SERVICE_NAME: anti-fraud-analyzer
-        SERVICE_PATH: ./cmd/anti-fraud-analyzer/main.go
+    image: tonygilman/anti-fraud-analyzer:latest
+    # build:
+    #   context: .
+    #   dockerfile: Dockerfile
+    #   args:
+    #     SERVICE_NAME: anti-fraud-analyzer
+    #     SERVICE_PATH: ./cmd/anti-fraud-analyzer/main.go
     env_file: [.env]
     depends_on: { clickhouse: { condition: service_healthy }, kafka: { condition: service_started }, clickhouse-migrator: { condition: service_completed_successfully }  }
 
   alerter-service:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      args:
-        SERVICE_NAME: alerter-service
-        SERVICE_PATH: ./cmd/alerter-service/main.go
+    image: tonygilman/alerter-service:latest
+    # build:
+    #   context: .
+    #   dockerfile: Dockerfile
+    #   args:
+    #     SERVICE_NAME: alerter-service
+    #     SERVICE_PATH: ./cmd/alerter-service/main.go
     ports: ['${ALERTER_SERVICE_PORT:-8081}:8080']
     env_file: [.env]
 
