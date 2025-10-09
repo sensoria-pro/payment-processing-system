@@ -98,6 +98,7 @@ jobs:
             
             # Create a .env file with secrets BEFORE launching
             echo "${{ secrets.PROD_ENV_FILE }}" > .env
+
             # Login to Docker Hub to download fresh images
             echo ${{ secrets.DOCKERHUB_TOKEN }} | docker login -u ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
             
