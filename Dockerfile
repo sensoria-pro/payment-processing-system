@@ -45,10 +45,10 @@ WORKDIR /home/appuser
 # and immediately assign it the correct owner
 COPY --from=builder /app/configs ./configs
 
-COPY --from=builder /app/payment-processing-system .
+COPY --from=builder /app/${SERVICE_NAME} .
 
 # Open the port (informative, real mapping in docker-compose)
 EXPOSE 8080
 
 # Launch the application
-CMD payment-processing-system
+CMD ["./${SERVICE_NAME}"]
