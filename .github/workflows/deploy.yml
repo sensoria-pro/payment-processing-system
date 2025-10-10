@@ -43,7 +43,7 @@ jobs:
           context: .
           file: ./Dockerfile
           push: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }} # push=true only for main
-          tags: tonygilman/payment-processing-system:latest
+          tags: tonygilman/payment-gateway:latest
           build-args: |
             SERVICE_NAME=payment-gateway
             SERVICE_PATH=./cmd/main.go
