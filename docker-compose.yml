@@ -149,8 +149,8 @@ services:
     ports:
       - '${PROMETHEUS_PORT}:9090'
     volumes:
-      - ./prometheus.yml:/etc/prometheus/prometheus.yml
-      - ./prometheus_rules.yml:/etc/prometheus/rules/prometheus_rules.yml # File with rules for alerts
+      - ./configs/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./configs/prometheus_rules.yml:/etc/prometheus/rules/prometheus_rules.yml # File with rules for alerts
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
     depends_on:
@@ -174,9 +174,9 @@ services:
     ports:
       - '${ALERTMANAGER_PORT}:9093'
     volumes:
-      - './alertmanager.yml:/etc/alertmanager/alertmanager.yml'
+      - './configs/alertmanager.yml:/etc/alertmanager/alertmanager.yml'
     command:
-      - '--config.file=/etc/alertmanager/alertmanager.yml'        
+      - '--config.file=/etc/alertmanager/alertmanager.yml'       
 
 volumes:
   postgres_data:
