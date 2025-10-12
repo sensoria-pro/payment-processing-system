@@ -130,6 +130,10 @@ services:
     volumes:
       - ./migrations_clickhouse:/migrations
     command: >
+      until clickhouse-client --host clickhouse --port 9000 --query "SELECT 1"; do
+        echo "Waiting for ClickHouse to be ready..."
+        sleep 3
+      done
       clickhouse-client --host clickhouse --port 9000 --query "
       CREATE TABLE IF NOT EXISTS default.fraud_reports (
           transaction_id UUID,
@@ -142,7 +146,7 @@ services:
       ORDER BY (processed_at, transaction_id);"
     depends_on:
       clickhouse:
-        condition: service_started    
+        condition: service_healthy   
 
   prometheus:
     image: prom/prometheus:v2.53.0
