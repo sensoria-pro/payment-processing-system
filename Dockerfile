@@ -3,7 +3,7 @@
 FROM golang:1.24-alpine AS builder
 
 # Arguments we will pass from docker-compose.yml
-ARG SERVICE_NAME=payment-processing-system
+ARG SERVICE_NAME=payment-gateway
 ARG SERVICE_PATH=./cmd/main.go
 
 # Set the working directory
