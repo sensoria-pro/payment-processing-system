@@ -45,9 +45,8 @@ jobs:
           push: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }} # push=true only for main
           tags: tonygilman/payment-gateway:latest
           build-args: |
-            SERVICE_PATH=./cmd/main.go
-          env:
             SERVICE_NAME=payment-gateway
+            SERVICE_PATH=./cmd/main.go
       
       - name: Build and push anti-fraud-analyzer
         uses: docker/build-push-action@v6
@@ -57,9 +56,8 @@ jobs:
             push: true
             tags: tonygilman/anti-fraud-analyzer:latest
             build-args: |
-              SERVICE_PATH=./cmd/anti-fraud-analyzer/main.go
-            env:
               SERVICE_NAME=anti-fraud-analyzer
+              SERVICE_PATH=./cmd/anti-fraud-analyzer/main.go
   
       - name: Build and push alerter-service
         uses: docker/build-push-action@v6
@@ -69,9 +67,8 @@ jobs:
             push: true
             tags: tonygilman/alerter-service:latest
             build-args: |
+              SERVICE_NAME=alerter-service
               SERVICE_PATH=./cmd/alerter-service/main.go
-            env:
-              SERVICE_NAME=alerter-service  
 
       - name: Build and push ch-query-tool
         uses: docker/build-push-action@v6
@@ -81,9 +78,8 @@ jobs:
             push: true
             tags: tonygilman/ch-query-tool:latest
             build-args: |
-             SERVICE_PATH=./cmd/ch-query-tool/main.go
-            env:
-              SERVICE_NAME=ch-query-tool 
+              SERVICE_NAME=ch-query-tool
+              SERVICE_PATH=./cmd/ch-query-tool/main.go  
               
       - name: Build and push dlq-tool
         uses: docker/build-push-action@v6

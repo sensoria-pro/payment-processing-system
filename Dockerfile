@@ -27,7 +27,8 @@ COPY configs/ configs/
 RUN ls -la /app/configs
 
 # Build the application using arguments
-RUN CGO_ENABLED=0 GOOS=linux go build -a -o /app/${SERVICE_NAME} ${SERVICE_PATH}
+#RUN CGO_ENABLED=0 GOOS=linux go build -a -o /app/${SERVICE_NAME} ${SERVICE_PATH}
+RUN CGO_ENABLED=0 GOOS=linux go build -a -o /app/app ${SERVICE_PATH}
 
 # --- Stage 2: The Final Look ---
 FROM alpine:latest
@@ -45,10 +46,12 @@ WORKDIR /home/appuser
 # and immediately assign it the correct owner
 COPY --from=builder /app/configs ./configs
 
-COPY --from=builder /app/${SERVICE_NAME} .
+#COPY --from=builder /app/${SERVICE_NAME} .
+COPY --from=builder /app/app ./app
 
 # Open the port (informative, real mapping in docker-compose)
 EXPOSE 8080
 
 # Launch the application
-CMD ["./${SERVICE_NAME}"]
+#CMD ["./${SERVICE_NAME}"]
+CMD ["./app"]
