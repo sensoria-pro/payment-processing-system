@@ -123,7 +123,11 @@ jobs:
             tags: tonygilman/service-doctor:latest
             build-args: |
               SERVICE_NAME=service-doctor
-              SERVICE_PATH=./cmd/service-doctor/main.go   
+              SERVICE_PATH=./cmd/service-doctor/main.go 
+              
+      - name: Run ClickHouse migrations
+        run: |
+          docker compose run --rm clickhouse-migrator        
 
   # --- JOB 2: Security Scan ---
   # This job runs in parallel with build-and-test to save time.

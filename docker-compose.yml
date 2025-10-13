@@ -144,9 +144,12 @@ services:
           processed_at   DateTime
       ) ENGINE = MergeTree()
       ORDER BY (processed_at, transaction_id);"
+    build: .
+    dockerfile: Dockerfile.migrator  
     depends_on:
       clickhouse:
-        condition: service_healthy   
+        condition: service_healthy
+    restart: on-failure       
 
   prometheus:
     image: prom/prometheus:v2.53.0

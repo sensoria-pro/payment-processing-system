@@ -1,0 +1,12 @@
+# We use the official ClickHouse image, which definitely contains clickhouse-client
+FROM clickhouse/clickhouse-server:24.3
+
+# Copy SQL migrations
+COPY migrations_clickhouse /migrations_clickhouse/
+
+# Копируем скрипт запуска миграций
+COPY init-db.sh /scripts/init-db.sh
+RUN chmod +x /scripts/init-db.sh
+
+# Run migrations
+CMD ["/scripts/init-db.sh"]
