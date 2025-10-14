@@ -126,34 +126,33 @@ services:
         condition: service_healthy
 
   clickhouse-migrator:
-    image: clickhouse/clickhouse-server:24.3
-    volumes:
-      - ./migrations_clickhouse:/migrations
-    command: >
-      sh -c '
-      until clickhouse-client --host clickhouse --port 9000 --query="SELECT 1" >/dev/null 2>&1; do
-        echo "Waiting for ClickHouse to be ready..."
-        sleep 3
-      done
-      echo "✅ ClickHouse is ready. Creating table...";
-      clickhouse-client --host clickhouse --port 9000 --query "
-      CREATE TABLE IF NOT EXISTS default.fraud_reports (
-          transaction_id UUID,
-          is_fraudulent  UInt8,
-          reason         String,
-          card_hash      String,
-          amount         Float64,
-          processed_at   DateTime
-      ) ENGINE = MergeTree()
-      ORDER BY (processed_at, transaction_id);"
-      '
-    build:
-      context: .
-      dockerfile: Dockerfile.migrator  
-    depends_on:
-      clickhouse:
-        condition: service_healthy
-    restart: on-failure       
+  image: clickhouse/clickhouse-server:24.3
+  volumes:
+    - ./migrations_clickhouse:/migrations
+  command: >
+    sh -c '
+    echo "Waiting for ClickHouse..."
+    until clickhouse-client --host clickhouse --port 9000 --query="SELECT 1" >/dev/null 2>&1; do
+      sleep 3
+    done
+    echo "ClickHouse is ready. Creating table..."
+    clickhouse-client --host clickhouse --port 9000 --query "
+    CREATE TABLE IF NOT EXISTS default.fraud_reports (
+        transaction_id UUID,
+        is_fraudulent UInt8,
+        reason String,
+        card_hash String,
+        amount Float64,
+        processed_at DateTime
+    ) ENGINE = MergeTree()
+    ORDER BY (processed_at, transaction_id);
+    "
+    echo "!! Table created."
+    '
+  depends_on:
+    clickhouse:
+      condition: service_healthy
+  restart: on-failure       
 
   prometheus:
     image: prom/prometheus:v2.53.0

@@ -30,11 +30,7 @@ README.md
 *.md
 
 # Scripts (кроме тех, что нужны для сборки)
-scripts/health-check.sh
-scripts/quick-start.sh
-scripts/README.md
-scripts/run.sh
-scripts/test-api.sh
+scripts/
 
 # Configs (кроме тех, что нужны для сборки)
 # configs/
