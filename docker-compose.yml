@@ -130,10 +130,12 @@ services:
     volumes:
       - ./migrations_clickhouse:/migrations
     command: >
-      until clickhouse-client --host clickhouse --port 9000 --query "SELECT 1"; do
+      sh -c '
+      until clickhouse-client --host clickhouse --port 9000 --query="SELECT 1" >/dev/null 2>&1; do
         echo "Waiting for ClickHouse to be ready..."
         sleep 3
       done
+      echo "✅ ClickHouse is ready. Creating table...";
       clickhouse-client --host clickhouse --port 9000 --query "
       CREATE TABLE IF NOT EXISTS default.fraud_reports (
           transaction_id UUID,
@@ -144,6 +146,7 @@ services:
           processed_at   DateTime
       ) ENGINE = MergeTree()
       ORDER BY (processed_at, transaction_id);"
+      '
     build:
       context: .
       dockerfile: Dockerfile.migrator  
