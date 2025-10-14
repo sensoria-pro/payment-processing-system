@@ -135,6 +135,7 @@ services:
         echo "Waiting for ClickHouse to be ready..."
         sleep 3
       done
+      echo "✅ ClickHouse is ready. Creating table...";
       clickhouse-client --host clickhouse --port 9000 --query "
       CREATE TABLE IF NOT EXISTS default.fraud_reports (
           transaction_id UUID,
