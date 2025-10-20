@@ -1,12 +1,14 @@
 # We use the official ClickHouse image, which definitely contains clickhouse-client
 FROM clickhouse/clickhouse-server:24.3
 
-# Copy SQL migrations
-COPY migrations_clickhouse /migrations_clickhouse/
+# Установим bash (на всякий случай)
+RUN apt-get update && apt-get install -y bash && rm -rf /var/lib/apt/lists/*
 
-# Копируем скрипт запуска миграций
+# Копируем миграции
+COPY migrations_clickhouse /migrations/
+
+# Копируем скрипт
 COPY init-db.sh /scripts/init-db.sh
 RUN chmod +x /scripts/init-db.sh
 
-# Run migrations
 CMD ["/scripts/init-db.sh"]
