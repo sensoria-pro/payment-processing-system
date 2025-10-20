@@ -30,14 +30,18 @@ README.md
 *.md
 
 # Scripts (кроме тех, что нужны для сборки)
-scripts/
+scripts/health-check.sh
+scripts/quick-start.sh
+scripts/README.md
+scripts/run.sh
+scripts/test-api.sh
 
 # Configs (кроме тех, что нужны для сборки)
 # configs/
 
 # Migrations (кроме тех, что нужны для сборки)
-migrations_clickhouse/
-migrations_postgres/
+# migrations_clickhouse/
+# migrations_postgres/
 
 # Monitoring configs
 prometheus*.yml
