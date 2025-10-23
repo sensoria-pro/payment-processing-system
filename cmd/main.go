@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"log/slog"
 	"net/http"
 	"os"
 	"os/signal"
@@ -27,13 +28,16 @@ import (
 
 func main() {
 	// --- 1. Configuration and Logging ---
+	fallbackLogger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
+		Level: slog.LevelDebug,
+	}))
 	cfg, err := config.Load("configs/config.yaml")
-	logger := observability.SetupLogger(cfg.App.Env)
-	logger.Info("The application is launched", "env", cfg.App.Env)
 	if err != nil {
-		logger.Error("Failed to load config", "ERROR", err)
+		fallbackLogger.Error("Failed to load config", "ERROR", err)
 		os.Exit(1)
 	}
+	logger := observability.SetupLogger(cfg.App.Env)
+	logger.Info("The application is launched", "env", cfg.App.Env)
 
 	//jwtSecret := os.Getenv("JWT_SECRET")
 	jwtSecret := cfg.JWT.JWTSecret

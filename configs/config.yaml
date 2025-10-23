@@ -1,5 +1,5 @@
 app: 
-  env: ''
+  env: 'payment-processing-system'
 
 server: 
   port: '${APP_PORT}'  
@@ -14,8 +14,8 @@ kafka:
 clickhouse:
   addr: '${CLICKHOUSE_ADDR}'
   database: '${CLICKHOUSE_DB}'
-	user: '${CLICKHOUSE_USER}'
-	password: '${CLICKHOUSE_PASSWORD}'
+  user: '${CLICKHOUSE_USER}'
+  password: '${CLICKHOUSE_PASSWORD}'
 
 redis:
   addr: '${REDIS_ADDR}'
