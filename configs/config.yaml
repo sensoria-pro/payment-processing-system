@@ -1,5 +1,5 @@
 app: 
-  env: 'payment-processing-system'
+  env: '${APP_ENV:-local}'
 
 server: 
   port: '${APP_PORT}'  

@@ -36,7 +36,7 @@ func main() {
 		fallbackLogger.Error("Failed to load config", "ERROR", err)
 		os.Exit(1)
 	}
-	fallbackLogger.Info("✅ Config loaded", "db_url", cfg.Postgres.DSN, "app_port", cfg.Server.Port)
+	fallbackLogger.Info("Config loaded", "db_url", cfg.Postgres.DSN, "app_port", cfg.Server.Port)
 	logger := observability.SetupLogger(cfg.App.Env)
 	logger.Info("The application is launched", "env", cfg.App.Env)
 
@@ -110,11 +110,6 @@ func main() {
 		os.Exit(1)
 	}
 	defer broker.Close()
-	// defer func() {
-	// 	if err := broker.Close(); err != nil {
-	// 		logger.Error("error closing Redis connection", "ERROR", err)
-	// 	}
-	// }()
 	logger.Info("kafka broker created")
 
 	// Dependency Injection: "Injecting" adapters into the kernel
