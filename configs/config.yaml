@@ -1,5 +1,5 @@
 app: 
-  env: '${APP_ENV:-local}'
+  env: ''
 
 server: 
   port: '${APP_PORT}'  
