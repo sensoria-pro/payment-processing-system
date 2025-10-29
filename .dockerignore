@@ -57,3 +57,6 @@ Makefile
 
 # Ansible
 ansible/
+
+# Docs
+docs/

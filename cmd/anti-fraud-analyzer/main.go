@@ -25,7 +25,7 @@ var dlqTopic = "transactions.created.dlq"
 
 func main() {
 	// --- Configuration Setup ---
-	cfg, err := config.Load("configs/config.yaml")
+	cfg, err := config.Load("configs/config.yml")
 	
 	logger := observability.SetupLogger(cfg.App.Env)
 	logger.Info("anti-fraud analyzer запускается", "env", cfg.App.Env)

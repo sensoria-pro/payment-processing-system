@@ -31,7 +31,7 @@ func main() {
 	fallbackLogger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
 		Level: slog.LevelDebug,
 	}))
-	cfg, err := config.Load("configs/config.yaml")
+	cfg, err := config.Load("configs/config.yml")
 	if err != nil {
 		fallbackLogger.Error("Failed to load config", "ERROR", err)
 		os.Exit(1)
