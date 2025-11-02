@@ -14,7 +14,7 @@ POSTGRES_DB ?= payment_system
 DB_SSL_MODE ?= disable
 
 # Database connection string
-DATABASE_URL = postgres://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@$(POSTGRES_HOST):$(POSTGRES_PORT)/$(POSTGRES_DB)?sslmode=$(DB_SSL_MODE)
+POSTGRES_DSN = postgres://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@$(POSTGRES_HOST):$(POSTGRES_PORT)/$(POSTGRES_DB)?sslmode=$(DB_SSL_MODE)
 
 # Path to migration
 MIGRATIONS_PATH = migrations_postgres
@@ -45,20 +45,20 @@ migrate-up: ## Apply all migrations
         exit 1; \
     fi
 	@echo "Применение миграций..."
-	migrate -path $(MIGRATIONS_PATH) -database "$(DATABASE_URL)" up
+	migrate -path $(MIGRATIONS_PATH) -database "$(POSTGRES_DSN)" up
 
 migrate-down: ## Roll back all migrations
 	@echo "Откат всех миграций..."
-	migrate -path $(MIGRATIONS_PATH) -database "$(DATABASE_URL)" down
+	migrate -path $(MIGRATIONS_PATH) -database "$(POSTGRES_DSN)" down
 
 migrate-force: ## Force migration version (use with caution)
 	@echo "Укажите версию: make migrate-force VERSION=<номер_версии>"
 	@if [ -z "$(VERSION)" ]; then echo "Ошибка: не указана версия"; exit 1; fi
-	migrate -path $(MIGRATIONS_PATH) -database "$(DATABASE_URL)" force $(VERSION)
+	migrate -path $(MIGRATIONS_PATH) -database "$(POSTGRES_DSN)" force $(VERSION)
 
 migrate-version: ## Show the current migration version
 	@echo "Текущая версия миграции:"
-	migrate -path $(MIGRATIONS_PATH) -database "$(DATABASE_URL)" version
+	migrate -path $(MIGRATIONS_PATH) -database "$(POSTGRES_DSN)" version
 
 migrate-create: ## Create a new migration
 	@echo "Укажите имя миграции: make migrate-create NAME=<имя_миграции>"
@@ -67,7 +67,7 @@ migrate-create: ## Create a new migration
 
 migrate-status: ## Show migration status
 	@echo "Статус миграций:"
-	migrate -path $(MIGRATIONS_PATH) -database "$(DATABASE_URL)" version
+	migrate -path $(MIGRATIONS_PATH) -database "$(POSTGRES_DSN)" version
 
 
 
