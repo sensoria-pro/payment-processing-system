@@ -1,13 +1,15 @@
-// TODO: просто логирует алерты
 package main
 
 import (
 	"encoding/json"
-	"log"
+	"log/slog"
 	"net/http"
+	"os"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"payment-processing-system/internal/config"
+	"payment-processing-system/internal/observability"
 )
 
 // Simplified webhook structure from Alertmanager
@@ -31,18 +33,32 @@ func alertHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	logger := slog.Default() // Use default slog logger since 'logger' is not defined in this scope
 	for _, alert := range webhook.Alerts {
-		log.Printf("ALERT %s: %s (%s) - %s",
-			alert.Status,
-			alert.Labels.Alertname,
-			alert.Labels.Severity,
-			alert.Annotations.Summary,
+		logger.Info("ALERT",
+			"STATUS", alert.Status,
+			"ALERTNAME", alert.Labels.Alertname,
+			"SEVERITY", alert.Labels.Severity,
+			"SUMMARY", alert.Annotations.Summary,
 		)
 	}
 	w.WriteHeader(http.StatusOK)
 }
 
 func main() {
+	// --- Configuration and Logging ---
+	var fallbackLogger = slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
+		Level: slog.LevelDebug,
+	}))
+	cfg, err := config.Load("configs/config.yml")
+	if err != nil {
+		fallbackLogger.Error("Failed to load config", "ERROR", err)
+		os.Exit(1)
+	}
+
+	logger := observability.SetupLogger(cfg.App.Env)
+	logger.Info("The alerter-service is launched", "env", cfg.App.Env)
+
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
@@ -50,11 +66,19 @@ func main() {
 	r.Post("/alert", alertHandler)
 	r.Get("/health", func(w http.ResponseWriter, r *http.Request) {
 		if _, err := w.Write([]byte("OK")); err != nil {
-			log.Printf("Failed to write health response: %v", err)
+			logger.Error("Failed to write health response", "ERROR", err)
 		}
 	})
-	log.Println("Alerter service started on :8081")
-	log.Fatal(http.ListenAndServe("0.0.0.0:8081", r))
+	port := cfg.Server.Port
+	if port == "" {
+		port = "8081"
+	}
+	logger.Info("Alerter service started on", "PORT", port)
+
+	if err := http.ListenAndServe("0.0.0.0:"+port, r); err != nil {
+		logger.Error("Failed to start server", "ERROR", err)
+		os.Exit(1)
+	}
 }
 
 //TODO: логирует алерты в телеграм

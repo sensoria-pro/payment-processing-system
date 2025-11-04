@@ -3,6 +3,7 @@ app:
 
 server: 
   port: '${APP_PORT}'  
+  port_alerter: '${ALERTER_SERVICE_PORT:-8081}'
 
 postgres:
   dsn: '${POSTGRES_DSN:-postgres://postgres:password_local_dev@postgres:5432/payment_processing_system?sslmode=disable}'

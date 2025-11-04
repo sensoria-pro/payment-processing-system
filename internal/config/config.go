@@ -26,6 +26,7 @@ type Config struct {
 	} `yaml:"app"`
 	Server struct {
 		Port string `yaml:"port"`
+		PortAlerter string `yaml:"port_alerter"`
 	} `yaml:"server"`
 	Postgres struct {
 		DSN string `yaml:"dsn"`
