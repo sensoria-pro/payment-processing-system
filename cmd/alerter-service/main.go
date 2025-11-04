@@ -49,7 +49,9 @@ func main() {
 
 	r.Post("/alert", alertHandler)
 	r.Get("/health", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("OK"))
+		if _, err := w.Write([]byte("OK")); err != nil {
+			log.Printf("Failed to write health response: %v", err)
+		}
 	})
 	log.Println("Alerter service started on :8081")
 	log.Fatal(http.ListenAndServe("0.0.0.0:8081", r))
