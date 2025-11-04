@@ -2,7 +2,7 @@ app:
   env: '${APP_ENV:-local}'
 
 server: 
-  port: '${APP_PORT}'  
+  port: '${APP_PORT:-8080}'  
   port_alerter: '${ALERTER_SERVICE_PORT:-8081}'
 
 postgres:

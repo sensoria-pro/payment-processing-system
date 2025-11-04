@@ -26,14 +26,15 @@ type AlertWebhook struct {
 	} `json:"alerts"`
 }
 
-func alertHandler(w http.ResponseWriter, r *http.Request) {
+func alertHandler(w http.ResponseWriter, r *http.Request, logger *slog.Logger) {
+	
 	var webhook AlertWebhook
-	if err := json.NewDecoder(r.Body).Decode(&webhook); err != nil {
-		http.Error(w, "Bad Request", http.StatusBadRequest)
-		return
-	}
+    if err := json.NewDecoder(r.Body).Decode(&webhook); err != nil {
+        logger.Error("Failed to decode webhook", "ERROR", err)
+        http.Error(w, "Bad Request", http.StatusBadRequest)
+        return
+    }
 
-	logger := slog.Default() // Use default slog logger since 'logger' is not defined in this scope
 	for _, alert := range webhook.Alerts {
 		logger.Info("ALERT",
 			"STATUS", alert.Status,
@@ -63,13 +64,18 @@ func main() {
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
 
-	r.Post("/alert", alertHandler)
+	// Wrap alertHandler to pass logger
+	r.Post("/alert", func(w http.ResponseWriter, req *http.Request) {
+		alertHandler(w, req, logger)
+	})
 	r.Get("/health", func(w http.ResponseWriter, r *http.Request) {
-		if _, err := w.Write([]byte("OK")); err != nil {
-			logger.Error("Failed to write health response", "ERROR", err)
+		w.Header().Set("Content-Type", "application/json")
+		if err := json.NewEncoder(w).Encode(map[string]string{"status": "OK"}); err != nil {
+			logger.Error("Failed to write health response", "error", err)
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		}
 	})
-	port := cfg.Server.Port
+	port := cfg.Server.PortAlerter
 	if port == "" {
 		port = "8081"
 	}
