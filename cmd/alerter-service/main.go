@@ -46,11 +46,13 @@ func main() {
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
-	//http.HandleFunc("/alert", alertHandler)
 
-	r.Get("/alert", alertHandler)
+	r.Post("/alert", alertHandler)
+	r.Get("/health", func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte("OK"))
+	})
 	log.Println("Alerter service started on :8081")
-	log.Fatal(http.ListenAndServe(":8081", r))
+	log.Fatal(http.ListenAndServe("0.0.0.0:8081", r))
 }
 
 //TODO: логирует алерты в телеграм
