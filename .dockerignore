@@ -44,9 +44,8 @@ scripts/test-api.sh
 # migrations_postgres/
 
 # Monitoring configs
-prometheus*.yml
-prometheus_rules.yml
-alertmanager.yml
+configs/prometheus*.yml
+configs/prometheus_rules.yml
 
 # Environment files
 .env
