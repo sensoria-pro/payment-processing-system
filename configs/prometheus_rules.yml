@@ -10,3 +10,11 @@ groups:
         annotations:
           summary: "High error rate on payment-gateway"
           description: "More than 0 errors per minute detected on {{ $labels.instance }}."
+          
+      - alert: HighRequestLatency
+        expr: job:request_latency_seconds:mean5m{job="payment-gateway"} > 0.5
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "High request latency"          
