@@ -22,7 +22,7 @@ jobs:
           go-version: '1.24'
 
       - name: Run Linter (golangci-lint) # 3. Run the linter (code style check)
-        uses: golangci/golangci-lint-action@v8
+        uses: golangci/golangci-lint-action@v9
 
 
       - name: Run Tests # 4. Run tests
