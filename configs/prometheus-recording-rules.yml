@@ -1,0 +1,8 @@
+groups:
+  - name: recording-rules
+    rules:
+      - record: job:request_latency_seconds:mean5m
+        expr: |
+          sum(rate(request_duration_seconds_sum{job="payment-gateway"}[5m]))
+            /
+          sum(rate(request_duration_seconds_count{job="payment-gateway"}[5m]))

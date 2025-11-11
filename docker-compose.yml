@@ -161,6 +161,7 @@ services:
     volumes:
       - ./configs/prometheus.yml:/etc/prometheus/prometheus.yml
       - ./configs/prometheus_rules.yml:/etc/prometheus/rules/prometheus_rules.yml # File with rules for alerts
+      - ./configs/prometheus-recording-rules.yml:/etc/prometheus/recording-rules.yml
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
     depends_on:
