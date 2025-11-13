@@ -1,14 +1,21 @@
-# We use the official ClickHouse image, which definitely contains clickhouse-client
+# Dockerfile.migrator
 FROM clickhouse/clickhouse-server:24.3
 
-# Установим bash (на всякий случай)
-RUN apt-get update && apt-get install -y bash && rm -rf /var/lib/apt/lists/*
+# Установи bash (в alpine он не установлен по умолчанию)
+RUN apk add --no-cache bash
 
-# Копируем миграции
+# Скопируй миграции
 COPY migrations_clickhouse /migrations/
 
-# Копируем скрипт
-COPY init-db.sh /scripts/init-db.sh
-RUN chmod +x /scripts/init-db.sh
+# Запусти скрипт
+CMD ["bash", "-c", "
+echo '🟡 Waiting for ClickHouse...'
+while ! clickhouse-client --host clickhouse --port 9000 --query='SELECT 1' 2>/dev/null; do
+  sleep 3
+done
+echo '✅ ClickHouse is ready. Applying migration...'
 
-CMD ["/scripts/init-db.sh"]
+clickhouse-client --host clickhouse --port 9000 < /migrations/000001_create_fraud_reports.up.sql
+
+echo '🎉 Migration completed.'
+"]
