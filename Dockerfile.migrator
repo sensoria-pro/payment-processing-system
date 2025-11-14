@@ -9,10 +9,12 @@ RUN apk add --no-cache bash
 COPY migrations_clickhouse /migrations/
 
 # Запусти скрипт (все в одной строке!)
-CMD ["bash", "-c", "echo '🟡 Waiting for ClickHouse...'; \
-while ! clickhouse-client --host clickhouse --port 9000 --query=\"SELECT 1\" >/dev/null 2>&1; do \
-  sleep 3; \
-done; \
-echo '✅ ClickHouse is ready. Applying migration...'; \
-clickhouse-client --host clickhouse --port 9000 < /migrations/init.sql; \
-echo '🎉 Migration completed.'"]
+CMD ["bash", "-c", "echo '🟡 Waiting for ClickHouse...' && \
+while ! clickhouse-client --host clickhouse --port 9000 --query='SELECT 1' >/dev/null 2>&1; do \
+  echo '⏳ ClickHouse is not ready yet, waiting...' \
+  sleep 3 \
+done && \
+echo '✅ ClickHouse is ready. Applying migration...' && \
+clickhouse-client --host clickhouse --port 9000 < /migrations/init.sql && \
+echo '🎉 Migration completed.' \
+"]
