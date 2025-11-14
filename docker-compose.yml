@@ -126,7 +126,7 @@ services:
         condition: service_healthy
 
   clickhouse-migrator:
-    image: clickhouse/clickhouse-server:latest
+    image: tonygilman/clickhouse-migrator:latest
     # volumes:
     # - ./migrations_clickhouse:/migrations
     # command: >
