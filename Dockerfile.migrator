@@ -1,20 +1,19 @@
-# Dockerfile.migrator
-
 FROM clickhouse/clickhouse-server:24.3
 
-# Установи bash (в alpine он не установлен по умолчанию)
-RUN apk add --no-cache bash
+# Установи bash через apt (образ на Ubuntu/Debian, не Alpine!)
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends bash && \
+    rm -rf /var/lib/apt/lists/*
 
 # Скопируй миграции
 COPY migrations_clickhouse /migrations/
 
-# Запусти скрипт (все в одной строке!)
+# Запусти скрипт
 CMD ["bash", "-c", "echo '🟡 Waiting for ClickHouse...' && \
 while ! clickhouse-client --host clickhouse --port 9000 --query='SELECT 1' >/dev/null 2>&1; do \
-  echo '⏳ ClickHouse is not ready yet, waiting...' \
-  sleep 3 \
+  echo '⏳ ClickHouse is not ready yet, waiting...'; \
+  sleep 3; \
 done && \
 echo '✅ ClickHouse is ready. Applying migration...' && \
 clickhouse-client --host clickhouse --port 9000 < /migrations/init.sql && \
-echo '🎉 Migration completed.' \
-"]
+echo '🎉 Migration completed.'"]
