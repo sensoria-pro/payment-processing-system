@@ -9,11 +9,11 @@ RUN apt-get update && \
 COPY migrations_clickhouse /migrations/
 
 # Запусти скрипт
-CMD ["bash", "-c", "echo '🟡 Waiting for ClickHouse...' && \
-while ! clickhouse-client --host clickhouse --port 9000 --query='SELECT 1' >/dev/null 2>&1; do \
+CMD ["bash", "-c", "echo 'Waiting for ClickHouse...' && \
+while ! clickhouse-client --host clickhouse --port 9000 --user ${CLICKHOUSE_USER} --password ${CLICKHOUSE_PASSWORD} --query='SELECT 1' >/dev/null 2>&1; do \
   echo '⏳ ClickHouse is not ready yet, waiting...'; \
   sleep 3; \
 done && \
-echo '✅ ClickHouse is ready. Applying migration...' && \
-clickhouse-client --host clickhouse --port 9000 < /migrations/init.sql && \
-echo '🎉 Migration completed.'"]
+echo 'ClickHouse is ready. Applying migration...' && \
+clickhouse-client --host clickhouse --port 9000 --user ${CLICKHOUSE_USER} --password ${CLICKHOUSE_PASSWORD} < /migrations/init.sql && \
+echo 'Migration completed.'"]
