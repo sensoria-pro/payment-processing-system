@@ -23,6 +23,7 @@ COPY cmd/ cmd/
 COPY internal/ internal/
 COPY configs/ configs/ 
 
+RUN go build -o app ${SERVICE_PATH}
 # Проверь, что configs/ теперь в /app/configs
 RUN ls -la /app/configs
 
@@ -32,6 +33,8 @@ RUN CGO_ENABLED=0 GOOS=linux go build -a -o /app/app ${SERVICE_PATH}
 
 # --- Stage 2: The Final Look ---
 FROM alpine:latest
+
+RUN apk --no-cache add ca-certificates
 
 # Create a group and user without rights
 RUN addgroup -S appgroup && adduser -S appuser -G appgroup
@@ -48,6 +51,10 @@ COPY --from=builder /app/configs ./configs
 
 #COPY --from=builder /app/${SERVICE_NAME} .
 COPY --from=builder /app/app ./app
+
+RUN ls -la && \
+    ls -la configs/ && \
+    cat configs/config.yml || echo "Файл config.yml не найден!"
 
 # Open the port (informative, real mapping in docker-compose)
 EXPOSE 8080
