@@ -19,7 +19,7 @@ import (
 
 func main() {
 	// --- Configuration Setup ---
-	cfg, err := config.Load("configs/config.yml")
+	cfg, err := config.Load("configs/config.yaml")
 	
 	logger := observability.SetupLogger(cfg.App.Env)
 	logger.Info("DLQ service запускается", "env", cfg.App.Env)

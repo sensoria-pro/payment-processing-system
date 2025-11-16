@@ -18,7 +18,7 @@ import (
 )
 
 const (
-	composeFileName    = "docker-compose.yml"
+	composeFileName    = "docker-compose.yaml"
 	projectRootRelPath = "../.."
 )
 
@@ -31,7 +31,7 @@ var colorPalette = []*color.Color{
 	color.New(color.FgRed),
 }
 
-// Structure for parsing docker-compose.yml
+// Structure for parsing docker-compose.yaml
 type ComposeConfig struct {
 	Services map[string]interface{} `yaml:"services"`
 }
@@ -61,7 +61,7 @@ func main() {
 		}
 	}()
 
-	// 3. Parsing docker-compose.yml to get service names
+	// 3. Parsing docker-compose.yaml to get service names
 	composePath := filepath.Join(projectRootRelPath, composeFileName)
 	composeFile, err := os.ReadFile(composePath)
 	if err != nil {

@@ -159,11 +159,11 @@ services:
     ports:
       - '${PROMETHEUS_PORT}:9090'
     volumes:
-      - ./configs/prometheus.yml:/etc/prometheus/prometheus.yml
-      - ./configs/prometheus_rules.yml:/etc/prometheus/rules/prometheus_rules.yml # File with rules for alerts
-      - ./configs/prometheus-recording-rules.yml:/etc/prometheus/recording-rules.yml
+      - ./configs/prometheus.yaml:/etc/prometheus/prometheus.yaml
+      - ./configs/prometheus_rules.yaml:/etc/prometheus/rules/prometheus_rules.yaml # File with rules for alerts
+      - ./configs/prometheus-recording-rules.yaml:/etc/prometheus/recording-rules.yaml
     command:
-      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--config.file=/etc/prometheus/prometheus.yaml'
     depends_on:
       - payment-gateway
 
@@ -185,9 +185,9 @@ services:
     ports:
       - '${ALERTMANAGER_PORT}:9093'
     volumes:
-      - './configs/alertmanager.yml:/etc/alertmanager/alertmanager.yml'
+      - './configs/alertmanager.yaml:/etc/alertmanager/alertmanager.yaml'
     command:
-      - '--config.file=/etc/alertmanager/alertmanager.yml'       
+      - '--config.file=/etc/alertmanager/alertmanager.yaml'       
 
 volumes:
   postgres_data:

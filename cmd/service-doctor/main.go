@@ -60,12 +60,12 @@ type Check struct {
 
 func main() {
 	logger := observability.SetupLogger("development")
-	cfg, err := config.Load("configs/config.yml")
+	cfg, err := config.Load("configs/config.yaml")
 	if err != nil {
 		logger.Error("не удалось загрузить конфигурацию", "ERROR", err)
 		os.Exit(1)
 	}
-	// Формируем список проверок, используя данные из config.yml
+	// Формируем список проверок, используя данные из config.yaml
 	checks := []Check{
 		{Name: "Payment Gateway", Func: func(ctx context.Context) error {
 			return checkHTTPHealth(ctx, cfg.Server.Port+"/healthz", logger)

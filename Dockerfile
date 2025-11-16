@@ -2,7 +2,7 @@
 # Use a specific Go version for reproducibility
 FROM golang:1.24-alpine AS builder
 
-# Arguments we will pass from docker-compose.yml
+# Arguments we will pass from docker-compose.yaml
 ARG SERVICE_NAME=payment-gateway
 ARG SERVICE_PATH=./cmd/main.go
 
@@ -54,7 +54,7 @@ COPY --from=builder /app/app ./app
 
 RUN ls -la && \
     ls -la configs/ && \
-    cat configs/config.yml || echo "Файл config.yml не найден!"
+    cat configs/config.yaml || echo "Файл config.yaml не найден!"
 
 # Open the port (informative, real mapping in docker-compose)
 EXPOSE 8080
