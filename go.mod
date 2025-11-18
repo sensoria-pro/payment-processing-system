@@ -7,7 +7,7 @@ toolchain go1.24.6
 require (
 	github.com/ClickHouse/clickhouse-go/v2 v2.40.3
 	github.com/coreos/go-oidc/v3 v3.16.0
-	github.com/docker/docker v28.5.1+incompatible
+	github.com/docker/docker v28.5.2+incompatible
 	github.com/fatih/color v1.18.0
 	github.com/go-chi/chi/v5 v5.2.3
 	github.com/go-faker/faker/v4 v4.7.0
@@ -18,12 +18,12 @@ require (
 	github.com/redis/go-redis/v9 v9.16.0
 	github.com/spf13/cobra v1.10.1
 	github.com/stretchr/testify v1.11.1
-	github.com/twmb/franz-go v1.20.2
+	github.com/twmb/franz-go v1.20.4
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.63.0
 	go.opentelemetry.io/otel v1.38.0
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc v1.38.0
 	go.opentelemetry.io/otel/sdk v1.38.0
-	golang.org/x/sys v0.37.0
+	golang.org/x/sys v0.38.0
 	gopkg.in/yaml.v3 v3.0.1
 )
 
