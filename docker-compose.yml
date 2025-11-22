@@ -89,8 +89,9 @@ services:
     #   args:
     #     SERVICE_NAME: alerter-service
     #     SERVICE_PATH: ./cmd/alerter-service/main.go
-    ports: ['${ALERTER_SERVICE_PORT:-8081}:8081']
     env_file: [.env]
+    ports: ['${ALERTER_SERVICE_PORT:-8081}:8081']
+    
 
 # --- Tools
   # ... prometheus, grafana, jaeger, alertmanager, pgadmin ...

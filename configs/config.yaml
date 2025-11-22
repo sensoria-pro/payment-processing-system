@@ -6,7 +6,7 @@ server:
   port_alerter: '${ALERTER_SERVICE_PORT:-8081}'
 
 postgres:
-  dsn: '${POSTGRES_DSN:-postgres://postgres:password_local_dev@postgres:5432/payment_processing_system?sslmode=disable}'
+  dsn: 'postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?sslmode=disable'
 
 kafka:
   bootstrap_servers: '${KAFKA_BOOTSTRAP_SERVERS:-localhost:9092}'

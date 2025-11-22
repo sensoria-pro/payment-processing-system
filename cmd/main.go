@@ -42,7 +42,7 @@ func main() {
 
 	//jwtSecret := os.Getenv("JWT_SECRET")
 	jwtSecret := cfg.JWT.JWTSecret
-	if jwtSecret == " " {
+	if jwtSecret == "" || jwtSecret == " " {
 		logger.Error("JWT_SECRET is not set")
 		os.Exit(1)
 	}
