@@ -1,39 +1,39 @@
 app: 
-  env: '${APP_ENV:-local}'
+  env: ${APP_ENV:-local}
 
 server: 
-  port: '${APP_PORT:-8080}'  
-  port_alerter: '${ALERTER_SERVICE_PORT:-8081}'
+  port: ${APP_PORT:-8080}  
+  port_alerter: ${ALERTER_SERVICE_PORT:-8081}
 
 postgres:
-  dsn: 'postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?sslmode=disable'
+  dsn: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?sslmode=disable
 
 kafka:
-  bootstrap_servers: '${KAFKA_BOOTSTRAP_SERVERS:-localhost:9092}'
-  topic: 'transactions.created'
+  bootstrap_servers: ${KAFKA_BOOTSTRAP_SERVERS:-localhost:9092}
+  topic: transactions.created
 
 clickhouse:
-  addr: '${CLICKHOUSE_ADDR}'
-  database: '${CLICKHOUSE_DB}'
-  user: '${CLICKHOUSE_USER}'
-  password: '${CLICKHOUSE_PASSWORD}'
+  addr: ${CLICKHOUSE_ADDR}
+  database: ${CLICKHOUSE_DB}
+  user: ${CLICKHOUSE_USER}
+  password: ${CLICKHOUSE_PASSWORD}
 
 redis:
-  addr: '${REDIS_ADDR}'
+  addr: ${REDIS_ADDR}
 
 jaeger:
-  port: '${JAEGER_PORT}'
-  port_grpc: '${JAEGER_PORT_GRPC}'
+  port: ${JAEGER_PORT}
+  port_grpc: ${JAEGER_PORT_GRPC}
 
 oidc:
-  url: '${OIDC_URL}'
-  client_id: '${OIDC_CLIENT_ID}'  
+  url: ${OIDC_URL}
+  client_id: ${OIDC_CLIENT_ID}  
 
 opa:
-  url: '${OPA_URL}'
+  url: ${OPA_URL}
 
 jwt:
-  jwt_secret: '${JWT_SECRET}'   
+  jwt_secret: ${JWT_SECRET}   
 
 anti_fraud:
   amount_threshold: 1000.0  #TODO: Порог по сумме
