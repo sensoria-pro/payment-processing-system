@@ -1,6 +1,6 @@
 # Payment Processing System
 
-[![Go Version](https://img.shields.io/badge/Go-1.24.4+-blue.svg)](https://golang.org)
+[![Go Version](https://img.shields.io/badge/Go-1.25+-blue.svg)](https://golang.org)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Docker](https://img.shields.io/badge/Docker-Ready-blue.svg)](https://docker.com)
 
@@ -198,7 +198,7 @@ go run ./cmd/ch-query-tool top-cards --limit=5
 
 | Компонент          | Технология   | Версия    | Назначение               |
 | ------------------ | ------------ | --------- | ------------------------ |
-| **Language**       | Go           | 1.24.4+   | Основной язык разработки |
+| **Language**       | Go           | 1.25+   | Основной язык разработки |
 | **Framework**      | Chi Router   | v5.2.2    | HTTP роутер              |
 | **Database**       | PostgreSQL   | 15-alpine | Основная БД              |
 | **Cache**          | Redis        | 7-alpine  | Кэширование и сессии     |
@@ -235,7 +235,7 @@ go run ./cmd/ch-query-tool top-cards --limit=5
 ```bash
 # Установка зависимостей
 - Docker & Docker Compose
-- Go 1.24.4+
+- Go 1.25+
 - Make (опционально)
 ```
 
