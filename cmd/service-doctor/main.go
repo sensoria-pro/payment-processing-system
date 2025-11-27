@@ -42,22 +42,6 @@ type Check struct {
 	Duration time.Duration
 }
 
-// loadConfig reads configuration from environment variables with fallbacks
-// func loadConfig() *Config {
-// 	return &Config{
-// 		GatewayAPI:     getEnv("GATEWAY_API_URL", "http://localhost:8080"),
-// 		AntiFraudAPI:   getEnv("ANTIFRAUD_API_URL", "localhost:8082"),
-// 		AlerterAPI:     getEnv("ALERTER_API_URL", "http://localhost:8081"),
-// 		PostgresDSN:    getEnv("POSTGRES_DSN", "postgres://user:password@localhost:5432/transactionsdb?sslmode=disable"),
-// 		RedisAddr:      getEnv("REDIS_ADDR", "localhost:6379"),
-// 		KafkaBrokers:   getEnv("KAFKA_BROKERS", "localhost:9092"),
-// 		ClickhouseAddr: getEnv("CLICKHOUSE_ADDR", "localhost:9000"),
-// 		KeycloakAddr:   getEnv("KEYCLOAK_ADDR", "http://localhost:8888"),
-// 		//VaultAddr:      getEnv("VAULT_ADDR", "http://localhost:8200"),
-// 		OpaAddr:        getEnv("OPA_ADDR", "http://localhost:8181"),
-// 	}
-// }
-
 func main() {
 	logger := observability.SetupLogger("development")
 	cfg, err := config.Load("configs/config.yaml")
