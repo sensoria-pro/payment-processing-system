@@ -188,6 +188,11 @@ services:
     ports:
       - '${JAEGER_PORT}:16686' # UI
       - '${JAEGER_PORT_GRPC}:4317' # gRPC Receiver for OpenTelemetry
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "http://localhost:16686"]
+      interval: 10s
+      timeout: 5s
+      retries: 10     
 
   alertmanager:
     image: prom/alertmanager:v0.27.0
