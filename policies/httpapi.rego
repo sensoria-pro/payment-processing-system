@@ -20,7 +20,7 @@ allow {
 allow {
     input.user.roles[_] == "customer"
     input.method == "POST"
-    input.path == "/api/v1/transactions"
+    input.path == "/api/v1/transaction"
 }
 
 # ПРАВИЛО 3 (Пример на будущее): Разрешаем пользователю просматривать
@@ -30,7 +30,7 @@ allow {
 #     path_parts := split(input.path, "/")
 #     path_parts[1] == "api"
 #     path_parts[2] == "v1"
-#     path_parts[3] == "transactions"
+#     path_parts[3] == "transaction"
 #     
 #     # Сравниваем ID из пути запроса с ID пользователя из токена
 #     transaction_owner_id := path_parts[4]

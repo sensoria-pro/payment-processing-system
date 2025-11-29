@@ -69,8 +69,11 @@ services:
     ports: ['${APP_PORT:-8080}:8080']
     env_file: [.env]
     environment:
+      - APP_PORT=:8080
       # ПЕРЕОПРЕДЕЛЯЕМ АДРЕС ДЛЯ KAFKA
       - KAFKA_BOOTSTRAP_SERVERS=kafka:29092
+      # Добавляем адрес Jaeger (протокол gRPC)
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:4317
     depends_on: { postgres: { condition: service_healthy }, kafka: { condition: service_started }, redis: { condition: service_started }, postgres-migrator: { condition: service_completed_successfully } }
 
   anti-fraud-analyzer:

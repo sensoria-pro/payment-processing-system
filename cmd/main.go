@@ -85,10 +85,10 @@ func main() {
 
 	// Initializing the Redis client
 	rateLimiterRepo, err := redis.NewRateLimiterAdapter(cfg.Redis.Addr)
-    if err != nil {
-        logger.Error("Failed to connect to Redis", "ERROR", err)
-        os.Exit(1)
-    }
+	if err != nil {
+		logger.Error("Failed to connect to Redis", "ERROR", err)
+		os.Exit(1)
+	}
 
 	defer func() {
 		if err := rateLimiterRepo.Close(); err != nil {
@@ -96,7 +96,7 @@ func main() {
 		}
 	}()
 
-    logger.Info("successfully connected to redis")
+	logger.Info("successfully connected to redis")
 	rateLimiterMiddleware := httphandler.NewRateLimiterMiddleware(rateLimiterRepo, logger)
 
 	// Create a Kafka producer
@@ -117,8 +117,6 @@ func main() {
 	transactionHandler := httphandler.NewTransactionHandler(transactionService, logger)
 
 	authHandler := httphandler.NewAuthHandler(logger, jwtSecret)
-
-	
 
 	// Setting up and running an HTTP server
 	r := chi.NewRouter()
@@ -152,7 +150,7 @@ func main() {
 		jwtAuth := httphandler.JWTMiddleware([]byte(jwtSecret))
 		r.Use(jwtAuth)
 		r.Use(opaMiddleware.Authorize)
-		r.Post("/transactions", transactionHandler.HandleCreateTransaction)
+		r.Post("/transaction", transactionHandler.HandleCreateTransaction)
 	})
 
 	// Create a protected route group
@@ -181,7 +179,9 @@ func main() {
 		WriteTimeout: 10 * time.Second,
 		IdleTimeout:  120 * time.Second,
 	}
-
+	if srv.Addr == "" {
+		srv.Addr = "8080"
+	}
 	wg := sync.WaitGroup{}
 	wg.Add(1)
 	go func() {
