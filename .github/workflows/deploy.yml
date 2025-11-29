@@ -193,5 +193,6 @@ jobs:
 
             # Restart services. Docker Compose will recreate only those containers whose images have been updated.
             # из-за долгого выполнения команд GitHub Actions прерывает её выполнение по таймауту, поэтому запускаю в фоне чтобы не мешать
-            nohup docker compose up -d </dev/null >/dev/null 2>&1 &
+            # nohup docker compose up -d </dev/null >/dev/null 2>&1 &
+            docker compose up -d --build
             sleep 5

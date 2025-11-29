@@ -1,15 +1,15 @@
 app: 
-  env: ${APP_ENV:-local}
+  env: ${APP_ENV}
 
 server: 
-  port: ${APP_PORT:-8080}  
-  port_alerter: ${ALERTER_SERVICE_PORT:-8081}
+  port: ${APP_PORT}  
+  port_alerter: ${ALERTER_SERVICE_PORT}
 
 postgres:
   dsn: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?sslmode=disable
 
 kafka:
-  bootstrap_servers: ${KAFKA_BOOTSTRAP_SERVERS:-localhost:9092}
+  bootstrap_servers: ${KAFKA_BOOTSTRAP_SERVERS}
   topic: transactions.created
 
 clickhouse:
