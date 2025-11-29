@@ -39,7 +39,7 @@ services:
 
 # --- Message broker (Kafka without Zookeeper) ---
   kafka:
-    image: confluentinc/cp-kafka:7.6.1
+    image: confluentinc/cp-kafka:latest
     ports:
       - '${KAFKA_PORT:-9092}:9092'
     environment:
@@ -68,6 +68,9 @@ services:
     #     SERVICE_PATH: ./cmd/main.go
     ports: ['${APP_PORT:-8080}:8080']
     env_file: [.env]
+    environment:
+      # ПЕРЕОПРЕДЕЛЯЕМ АДРЕС ДЛЯ KAFKA
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:29092
     depends_on: { postgres: { condition: service_healthy }, kafka: { condition: service_started }, redis: { condition: service_started }, postgres-migrator: { condition: service_completed_successfully } }
 
   anti-fraud-analyzer:
@@ -79,6 +82,8 @@ services:
     #     SERVICE_NAME: anti-fraud-analyzer
     #     SERVICE_PATH: ./cmd/anti-fraud-analyzer/main.go
     env_file: [.env]
+    environment:
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:29092
     depends_on: { clickhouse: { condition: service_healthy }, kafka: { condition: service_started }, clickhouse-migrator: { condition: service_completed_successfully }  }
 
   alerter-service:
