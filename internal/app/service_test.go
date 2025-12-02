@@ -5,11 +5,12 @@ import (
 
 	"testing"
 
+	"payment-processing-system/internal/core/domain"
+	_ "payment-processing-system/internal/core/ports"
+
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"payment-processing-system/internal/core/domain"
-	_ "payment-processing-system/internal/core/ports"
 )
 
 // Mock - implementation of the repository
@@ -44,7 +45,7 @@ func TestTransactionService_CreateTransaction_Success(t *testing.T) {
 
 	ctx := context.Background()
 	idemKey := uuid.New()
-	cardNum := "4000123456789010"
+	cardNum := "4532015112830366" // Valid test card number (Luhn algorithm)
 
 	// We expect the Save method to be called 1 time with any transaction object
 	mockRepo.On("Save", ctx, mock.AnythingOfType("domain.Transaction")).Return(nil)

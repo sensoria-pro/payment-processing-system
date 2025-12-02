@@ -53,13 +53,10 @@ func NewOIDCAuthenticator(ctx context.Context, providerURL, clientID string, log
 }
 
 // writeJSONError is a helper for sending errors in JSON format.
-func writeJSONError(w http.ResponseWriter, message string, code int) {
+func writeJSONError(w http.ResponseWriter, message string, status int) {
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(code)
-	
-	if err := json.NewEncoder(w).Encode(ErrorResponse{Error: message}); err != nil {
-		logger.Error("Failed to encode JSON response", "ERROR", err)
-	}
+	w.WriteHeader(status)
+	json.NewEncoder(w).Encode(map[string]string{"error": message})
 }
 
 // Middleware - This is an HTTP middleware for token verification.

@@ -153,6 +153,23 @@ func main() {
 		r.Post("/transaction", transactionHandler.HandleCreateTransaction)
 	})
 
+	// Create a protected route group
+	// r.Group(func(r chi.Router) {
+	// 	r.Use(httphandler.JWTMiddleware([]byte(jwtSecret)))
+
+	// 	// This endpoint will only be accessible with a valid JWT.
+	// 	r.Get("/profile", func(w http.ResponseWriter, r *http.Request) {
+	// 		userIDRaw := r.Context().Value("userID")
+	// 		userID, ok := userIDRaw.(string)
+	// 		if !ok || userID == "" {
+	// 			http.Error(w, "Failed to get user ID", http.StatusUnauthorized)
+	// 			return
+	// 		}
+	// 		if _, writeErr := w.Write([]byte("Your user ID: " + userID)); writeErr != nil {
+	// 			("Failed to write profile response", "error", writeErr)
+	// 		}
+	// 	})
+	// })
 
 	// Graceful Shutdown
 	srv := &http.Server{
