@@ -49,12 +49,12 @@ func main() {
 	// --- 3. Observability ---
 	shutdownTracer, err := observability.InitTracer(cfg.Jaeger.Port, "payment-gateway")
 	if err != nil {
-		logger.Error("Failed to initialize tracing", "error", err)
+		logger.Error("Failed to initialize tracing", "ERROR", err)
 		os.Exit(1)
 	}
 	defer func() {
 		if err := shutdownTracer(context.Background()); err != nil {
-			logger.Warn("Failed to shutdown tracer", "error", err)
+			logger.Warn("Failed to shutdown tracer", "ERROR", err)
 		}
 	}()
 
@@ -64,7 +64,7 @@ func main() {
 	// PostgreSQL
 	repo, err := postgres.NewRepository(ctx, cfg.Postgres.DSN)
 	if err != nil {
-		logger.Error("Failed to connect to PostgreSQL", "error", err)
+		logger.Error("Failed to connect to PostgreSQL", "ERROR", err)
 		os.Exit(1)
 	}
 	defer repo.Close()
@@ -73,16 +73,19 @@ func main() {
 	// Redis
 	rateLimiterRepo, err := redis.NewRateLimiterAdapter(cfg.Redis.Addr)
 	if err != nil {
-		logger.Error("Failed to connect to Redis", "error", err)
+		logger.Error("Failed to connect to Redis", "ERROR", err)
 		os.Exit(1)
 	}
-	defer rateLimiterRepo.Close()
-	logger.Info("Connected to Redis")
+	defer func() {
+		if err := rateLimiterRepo.Close(); err != nil {
+			logger.Info("onnected to Redis", "ERROR", err)
+		}
+	}()
 
 	// Kafka
 	broker, err := kafka.NewBroker([]string{cfg.Kafka.BootstrapServers}, cfg.Kafka.Topic, logger)
 	if err != nil {
-		logger.Error("Failed to create Kafka broker", "error", err)
+		logger.Error("Failed to create Kafka broker", "ERROR", err)
 		os.Exit(1)
 	}
 	defer broker.Close()
