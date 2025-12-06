@@ -2,14 +2,13 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"log/slog"
 	"net/http"
 	"os"
 	"os/signal"
-	"sync"
+	"syscall"
 	"time"
-
-	"golang.org/x/sys/unix"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -29,184 +28,162 @@ import (
 func main() {
 	// --- 1. Configuration and Logging ---
 	fallbackLogger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
-		Level: slog.LevelDebug,
+		Level: slog.LevelInfo,
 	}))
 	cfg, err := config.Load("configs/config.yaml")
 	if err != nil {
-		fallbackLogger.Error("Failed to load config", "ERROR", err)
+		fallbackLogger.Error("Failed to load config", "error", err)
 		os.Exit(1)
 	}
-	fallbackLogger.Info("Config loaded", "db_url", "loaded connect DB", "app_port", cfg.Server.Port)
-	logger := observability.SetupLogger(cfg.App.Env)
-	logger.Info("The application is launched", "env", cfg.App.Env)
 
-	//jwtSecret := os.Getenv("JWT_SECRET")
+	logger := observability.SetupLogger(cfg.App.Env)
+	logger.Info("Application starting", "env", cfg.App.Env, "port", cfg.Server.Port)
+
+	// --- 2. Validate critical config ---
 	jwtSecret := cfg.JWT.JWTSecret
-	if jwtSecret == "" || jwtSecret == " " {
+	if jwtSecret == "" {
 		logger.Error("JWT_SECRET is not set")
 		os.Exit(1)
 	}
 
-	// --- 2. Setting up Observability ---
+	// --- 3. Observability ---
 	shutdownTracer, err := observability.InitTracer(cfg.Jaeger.Port, "payment-gateway")
 	if err != nil {
-		logger.Error("Failed to initialize tracing", "ERROR", err)
+		logger.Error("Failed to initialize tracing", "error", err)
 		os.Exit(1)
 	}
-	defer shutdownTracer(context.Background())
-
-	// --- 3. Security Settings --- //TODO: пока не использую OIDC
-	// oidcAuthenticator, err := httphandler.NewOIDCAuthenticator(
-	// 	context.Background(),
-	// 	cfg.OIDC.URL,
-	// 	cfg.OIDC.ClientID,
-	// )
-	// if err != nil {
-	// 	logger.Error("Failed to create OIDC authenticator", "url", cfg.OIDC.URL, "client_id", cfg.OIDC.ClientID, "error", err)
-	// 	os.Exit(1)
-	// }
-
-	opaMiddleware := opa.NewMiddleware(cfg.OPA.URL, logger)
-
-	// Creating Adapters
-
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-	// Connecting to PostgreSQL
-	repo, err := postgres.NewRepository(ctx, cfg.Postgres.DSN)
-	if err != nil {
-		logger.Error("failed to connect to postgres", "ERROR", err)
-		os.Exit(1)
-	}
-	// Deferred block for closing PostgreSQL repository
-	defer repo.Close()
-
-	logger.Info("successfully connected to postgres")
-
-	// Initializing the Redis client
-	rateLimiterRepo, err := redis.NewRateLimiterAdapter(cfg.Redis.Addr)
-	if err != nil {
-		logger.Error("Failed to connect to Redis", "ERROR", err)
-		os.Exit(1)
-	}
-
 	defer func() {
-		if err := rateLimiterRepo.Close(); err != nil {
-			logger.Error("error closing Redis connection", "ERROR", err)
+		if err := shutdownTracer(context.Background()); err != nil {
+			logger.Warn("Failed to shutdown tracer", "error", err)
 		}
 	}()
 
-	logger.Info("successfully connected to redis")
-	rateLimiterMiddleware := httphandler.NewRateLimiterMiddleware(rateLimiterRepo, logger)
+	// --- 4. Dependencies ---
+	ctx := context.Background()
 
-	// Create a Kafka producer
-	//TODO: закомментировать для локальной версии тестов
-	broker, err := kafka.NewBroker([]string{cfg.Kafka.BootstrapServers}, cfg.Kafka.Topic, logger)
-
-	//TODO: Создаем заглушку для Kafka (для локальной разработки)
-	//broker, err := mock.NewBroker([]string{cfg.Kafka.BootstrapServers}, cfg.Kafka.Topic, logger)
+	// PostgreSQL
+	repo, err := postgres.NewRepository(ctx, cfg.Postgres.DSN)
 	if err != nil {
-		logger.Error("Failed to create kafka broker", "ERROR", err)
+		logger.Error("Failed to connect to PostgreSQL", "error", err)
+		os.Exit(1)
+	}
+	defer repo.Close()
+	logger.Info("Connected to PostgreSQL")
+
+	// Redis
+	rateLimiterRepo, err := redis.NewRateLimiterAdapter(cfg.Redis.Addr)
+	if err != nil {
+		logger.Error("Failed to connect to Redis", "error", err)
+		os.Exit(1)
+	}
+	defer rateLimiterRepo.Close()
+	logger.Info("Connected to Redis")
+
+	// Kafka
+	broker, err := kafka.NewBroker([]string{cfg.Kafka.BootstrapServers}, cfg.Kafka.Topic, logger)
+	if err != nil {
+		logger.Error("Failed to create Kafka broker", "error", err)
 		os.Exit(1)
 	}
 	defer broker.Close()
-	logger.Info("kafka broker created")
+	logger.Info("Kafka broker created")
 
-	// Dependency Injection: "Injecting" adapters into the kernel
+	// --- 5. Service Layer ---
 	transactionService := app.NewTransactionService(repo, broker)
 	transactionHandler := httphandler.NewTransactionHandler(transactionService, logger)
-
 	authHandler := httphandler.NewAuthHandler(logger, jwtSecret)
+	rateLimiterMiddleware := httphandler.NewRateLimiterMiddleware(rateLimiterRepo, logger)
+	opaMiddleware := opa.NewMiddleware(cfg.OPA.URL, logger)
 
-	// Setting up and running an HTTP server
+	// --- 6. HTTP Router ---
 	r := chi.NewRouter()
-	r.Use(middleware.Logger)
-	r.Use(rateLimiterMiddleware.Handler)
 
-	r.Use(middleware.Recoverer)
-	r.Use(middleware.RequestID)
-	r.Use(middleware.RealIP)
-	r.Use(observability.NewLoggerMiddleware(logger))
-	r.Use(middleware.Recoverer)
-	r.Use(observability.NewMetricsMiddleware("payment-gateway"))
-	r.Use(observability.NewTracingMiddleware("payment-gateway"))
+	// Public middleware
+	r.Use(
+		middleware.RequestID,
+		middleware.RealIP,
+		rateLimiterMiddleware.Handler,
+		middleware.Logger,
+		middleware.Recoverer,
+		observability.NewLoggerMiddleware(logger),
+		observability.NewMetricsMiddleware("payment-gateway"),
+		observability.NewTracingMiddleware("payment-gateway"),
+	)
 
-	// Public endpoint for login
+	// Public routes
 	r.Post("/login", authHandler.HandleLogin)
-
-	// Health check endpoint
+	// Health check
 	r.Get("/health", func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		if _, err := w.Write([]byte(`{"status": "healthy", "service": "payment-gateway"}`)); err != nil {
-			logger.Error("Failed to write health response", "ERROR", err)
+		if err := json.NewEncoder(w).Encode(map[string]string{
+			"status":  "healthy",
+			"service": "payment-gateway",
+		}); err != nil {
+			logger.Error("Failed to write health response", "error", err)
 		}
 	})
-	// Transaction endpoint
-	//r.Post("/transaction", transactionHandler.HandleCreateTransaction)
-
 	r.Handle("/metrics", promhttp.Handler())
+
+	// Protected routes: /api/v1/*
 	r.Route("/api/v1", func(r chi.Router) {
-		// r.Use(oidcAuthenticator.Middleware) //TODO: Пока не используем OIDC
-		jwtAuth := httphandler.JWTMiddleware([]byte(jwtSecret))
-		r.Use(jwtAuth)
-		r.Use(opaMiddleware.Authorize)
+		r.Use(
+			httphandler.JWTMiddleware([]byte(jwtSecret)),
+			opaMiddleware.Authorize,
+		)
 		r.Post("/transaction", transactionHandler.HandleCreateTransaction)
 	})
 
-	// Create a protected route group
-	// r.Group(func(r chi.Router) {
-	// 	r.Use(httphandler.JWTMiddleware([]byte(jwtSecret)))
+	// Protected routes: /profile (example)
+	r.Group(func(r chi.Router) {
+		r.Use(httphandler.JWTMiddleware([]byte(jwtSecret)))
+		r.Get("/profile", func(w http.ResponseWriter, r *http.Request) {
+			userIDRaw := r.Context().Value("userID")
+			if userID, ok := userIDRaw.(string); ok && userID != "" {
+				_, _ = w.Write([]byte("Your user ID: " + userID))
+				return
+			}
+			http.Error(w, "Failed to get user ID", http.StatusUnauthorized)
+		})
+	})
 
-	// 	// This endpoint will only be accessible with a valid JWT.
-	// 	r.Get("/profile", func(w http.ResponseWriter, r *http.Request) {
-	// 		userIDRaw := r.Context().Value("userID")
-	// 		userID, ok := userIDRaw.(string)
-	// 		if !ok || userID == "" {
-	// 			http.Error(w, "Failed to get user ID", http.StatusUnauthorized)
-	// 			return
-	// 		}
-	// 		if _, writeErr := w.Write([]byte("Your user ID: " + userID)); writeErr != nil {
-	// 			("Failed to write profile response", "error", writeErr)
-	// 		}
-	// 	})
-	// })
+	// --- 7. HTTP Server ---
+	serverAddr := cfg.Server.Port
+	if serverAddr == "" {
+		serverAddr = "8080"
+	}
 
-	// Graceful Shutdown
 	srv := &http.Server{
-		Addr:         cfg.Server.Port,
+		Addr:         ":" + serverAddr,
 		Handler:      r,
 		ReadTimeout:  5 * time.Second,
 		WriteTimeout: 10 * time.Second,
 		IdleTimeout:  120 * time.Second,
 	}
-	if srv.Addr == "" {
-		srv.Addr = "8080"
-	}
-	wg := sync.WaitGroup{}
-	wg.Add(1)
+
+	// Start server
 	go func() {
-		defer wg.Done()
-		logger.Info("starting server", "port", cfg.Server.Port)
+		logger.Info("HTTP server starting", "addr", srv.Addr)
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			logger.Error("server failed to start", "ERROR", err)
+			logger.Error("HTTP server failed", "error", err)
 			os.Exit(1)
 		}
 	}()
-	wg.Wait()
 
-	// We are waiting for the signal to finish (Ctrl+C)
+	// Wait for interrupt signal
 	quit := make(chan os.Signal, 1)
-	signal.Notify(quit, unix.SIGINT, unix.SIGTERM)
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	<-quit
-	logger.Info("shutting down server...")
+	logger.Info("Shutting down server...")
 
-	// 5 seconds to complete current requests
-	shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer shutdownCancel()
+	// Graceful shutdown
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
 
 	if err := srv.Shutdown(shutdownCtx); err != nil {
-		logger.Error("server shutdown failed", "ERROR", err)
+		logger.Error("Server shutdown failed", "error", err)
+		os.Exit(1)
 	}
 
-	logger.Info("server exited properly")
+	logger.Info("Server exited properly")
 }

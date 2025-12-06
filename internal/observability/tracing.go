@@ -2,6 +2,8 @@ package observability
 
 import (
 	"context"
+	"net/http"
+
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
@@ -9,11 +11,10 @@ import (
 	"go.opentelemetry.io/otel/sdk/resource"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
-	"net/http"
 )
 
 // InitTracer initializes and registers the OpenTelemetry tracer.
-func InitTracer(jaegerURL, serviceName string) (func(context.Context), error) {
+func InitTracer(jaegerURL, serviceName string) (func(context.Context) error, error) {
 	exporter, err := otlptracegrpc.New(context.Background(),
 		otlptracegrpc.WithInsecure(),
 		otlptracegrpc.WithEndpoint(jaegerURL),
@@ -34,8 +35,8 @@ func InitTracer(jaegerURL, serviceName string) (func(context.Context), error) {
 	otel.SetTracerProvider(tp)
 	otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(propagation.TraceContext{}, propagation.Baggage{}))
 
-	return func(ctx context.Context) {
-		_ = tp.Shutdown(ctx)
+	return func(ctx context.Context) error {
+		return tp.Shutdown(ctx)
 	}, nil
 }
 
