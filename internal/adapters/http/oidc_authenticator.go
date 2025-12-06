@@ -56,7 +56,9 @@ func NewOIDCAuthenticator(ctx context.Context, providerURL, clientID string, log
 func writeJSONError(w http.ResponseWriter, message string, status int) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
-	json.NewEncoder(w).Encode(map[string]string{"error": message})
+	if err := json.NewEncoder(w).Encode(map[string]string{"error": message}); err != nil {
+		logger.Info("Encode JSON", "ERROR", err)
+	}
 }
 
 // Middleware - This is an HTTP middleware for token verification.

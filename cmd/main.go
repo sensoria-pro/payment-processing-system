@@ -78,7 +78,7 @@ func main() {
 	}
 	defer func() {
 		if err := rateLimiterRepo.Close(); err != nil {
-			logger.Info("onnected to Redis", "ERROR", err)
+			logger.Info("connected to Redis", "ERROR", err)
 		}
 	}()
 
