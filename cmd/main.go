@@ -157,7 +157,7 @@ func main() {
 	}
 
 	srv := &http.Server{
-		Addr:         ":" + serverAddr,
+		Addr:         serverAddr,
 		Handler:      r,
 		ReadTimeout:  5 * time.Second,
 		WriteTimeout: 10 * time.Second,
