@@ -61,7 +61,6 @@ func main() {
 	// --- 4. Dependencies ---
 	ctx := context.Background()
 
-	// PostgreSQL
 	repo, err := postgres.NewRepository(ctx, cfg.Postgres.DSN)
 	if err != nil {
 		logger.Error("Failed to connect to PostgreSQL", "ERROR", err)
