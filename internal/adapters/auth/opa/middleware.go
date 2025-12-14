@@ -8,7 +8,6 @@ import (
 	"time"
 )
 
-// Key for extracting claims from context
 type contextKey string
 
 const claimsContextKey = contextKey("claims")
