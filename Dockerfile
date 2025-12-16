@@ -15,6 +15,7 @@ RUN apk add --no-cache git ca-certificates tzdata
 # Copy and download dependencies separately to use the Docker cache
 COPY go.mod go.sum ./
 RUN go mod download
+RUN go mod tidy
 
 # Copy the rest of the source code
 COPY . .

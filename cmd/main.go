@@ -94,9 +94,10 @@ func main() {
 	// --- 5. Service Layer ---
 	transactionService := app.NewTransactionService(repo, broker)
 	transactionHandler := httphandler.NewTransactionHandler(transactionService, logger)
-	authHandler := httphandler.NewAuthHandler(logger, jwtSecret)
+	// authHandler := httphandler.NewAuthHandler(logger, jwtSecret)
 	rateLimiterMiddleware := httphandler.NewRateLimiterMiddleware(rateLimiterRepo, logger)
 	opaMiddleware := opa.NewMiddleware(cfg.OPA.URL, logger)
+	oauthServer := auth.NewAuthorizationServer(jwtSecret, logger)
 
 	// --- 6. HTTP Router ---
 	r := chi.NewRouter()
@@ -114,7 +115,13 @@ func main() {
 	)
 
 	// Public routes
-	r.Post("/login", authHandler.HandleLogin)
+	// r.Post("/login", authHandler.HandleLogin)
+	r.Post("/oauth/token", func(w http.ResponseWriter, r *http.Request) {
+		err := oauthServer.HandleTokenRequest(w, r)
+		if err != nil {
+			logger.Error("failed to handle token request", "error", err)
+		}
+	})
 	// Health check
 	r.Get("/health", func(w http.ResponseWriter, _ *http.Request) {
 		w.Header().Set("Content-Type", "application/json")

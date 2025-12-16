@@ -9,6 +9,7 @@ require (
 	github.com/fatih/color v1.18.0
 	github.com/go-chi/chi/v5 v5.2.3
 	github.com/go-faker/faker/v4 v4.7.0
+	github.com/go-oauth2/oauth2/v4 v4.5.4
 	github.com/golang-jwt/jwt/v5 v5.3.0
 	github.com/google/uuid v1.6.0
 	github.com/jackc/pgx/v5 v5.7.6
@@ -21,7 +22,6 @@ require (
 	go.opentelemetry.io/otel v1.38.0
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc v1.38.0
 	go.opentelemetry.io/otel/sdk v1.38.0
-	golang.org/x/sys v0.38.0
 	gopkg.in/yaml.v3 v3.0.1
 )
 
@@ -69,6 +69,14 @@ require (
 	github.com/shopspring/decimal v1.4.0 // indirect
 	github.com/spf13/pflag v1.0.9 // indirect
 	github.com/stretchr/objx v0.5.2 // indirect
+	github.com/tidwall/btree v0.0.0-20191029221954-400434d76274 // indirect
+	github.com/tidwall/buntdb v1.1.2 // indirect
+	github.com/tidwall/gjson v1.12.1 // indirect
+	github.com/tidwall/grect v0.0.0-20161006141115-ba9a043346eb // indirect
+	github.com/tidwall/match v1.1.1 // indirect
+	github.com/tidwall/pretty v1.2.0 // indirect
+	github.com/tidwall/rtree v0.0.0-20180113144539-6cd427091e0e // indirect
+	github.com/tidwall/tinyqueue v0.0.0-20180302190814-1e39f5511563 // indirect
 	github.com/twmb/franz-go/pkg/kmsg v1.12.0 // indirect
 	go.opentelemetry.io/auto/sdk v1.1.0 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace v1.38.0 // indirect
@@ -82,6 +90,7 @@ require (
 	golang.org/x/net v0.47.0 // indirect
 	golang.org/x/oauth2 v0.30.0 // indirect
 	golang.org/x/sync v0.18.0 // indirect
+	golang.org/x/sys v0.38.0 // indirect
 	golang.org/x/text v0.31.0 // indirect
 	golang.org/x/time v0.13.0 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20250825161204-c5933d9347a5 // indirect
