@@ -21,6 +21,7 @@ import (
 	"payment-processing-system/internal/adapters/storage/postgres"
 	"payment-processing-system/internal/adapters/storage/redis"
 	"payment-processing-system/internal/app"
+	// "payment-processing-system/internal/auth"
 	"payment-processing-system/internal/config"
 	"payment-processing-system/internal/observability"
 )

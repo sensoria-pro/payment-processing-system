@@ -52,7 +52,7 @@ func JWTMiddleware(jwtSecret []byte) func(http.Handler) http.Handler {
 			}
 
 			// Enrich the request context with information from the token (e.g. user ID)
-			ctx := context.WithValue(r.Context(), userContextKey, claims["sub"])
+			ctx := context.WithValue(r.Context(), "claims", claims)
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
 	}
