@@ -37,13 +37,13 @@ type createTransactionRequest struct {
 func (h *TransactionHandler) HandleCreateTransaction(w http.ResponseWriter, r *http.Request) {
 	var req createTransactionRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		writeJSONError(w, "invalid request body", http.StatusBadRequest)
+		h.writeJSONError(w, "invalid request body", http.StatusBadRequest)
 		return
 	}
 
 	idemKey, err := uuid.Parse(req.IdempotencyKey)
 	if err != nil {
-		writeJSONError(w, "invalid idempotency key", http.StatusBadRequest)
+		h.writeJSONError(w, "invalid idempotency key", http.StatusBadRequest)
 		return
 	}
 
@@ -52,19 +52,19 @@ func (h *TransactionHandler) HandleCreateTransaction(w http.ResponseWriter, r *h
 		switch {
 		case errors.Is(err, domain.ErrInvalidAmount), 
 			errors.Is(err, domain.ErrInvalidCard):
-			writeJSONError(w, "invalid input data", http.StatusBadRequest)
+			h.writeJSONError(w, "invalid input data", http.StatusBadRequest)
 
 		case errors.Is(err, domain.ErrIdempotencyKeyUsed):
-			writeJSONError(w, "idempotency key already used", http.StatusConflict)
+			h.writeJSONError(w, "idempotency key already used", http.StatusConflict)
 
 		case errors.Is(err, domain.ErrStorageUnavailable),
 			errors.Is(err, domain.ErrBrokerUnavailable):
 			h.logger.Warn("temporary failure in external dependency", "error", err)
-			writeJSONError(w, "service temporarily unavailable", http.StatusServiceUnavailable)
+			h.writeJSONError(w, "service temporarily unavailable", http.StatusServiceUnavailable)
 
 		default:
 			h.logger.Error("unexpected error during transaction creation", "error", err)
-			writeJSONError(w, "internal server error", http.StatusInternalServerError)
+			h.writeJSONError(w, "internal server error", http.StatusInternalServerError)
 		}
 		return
 	}
@@ -75,5 +75,13 @@ func (h *TransactionHandler) HandleCreateTransaction(w http.ResponseWriter, r *h
 	if err := json.NewEncoder(w).Encode(map[string]string{"transaction_id": tx.ID.String()}); err != nil {
 		// use the logger that came through the structure.
 		h.logger.Error("failed to write json response", "ERROR", err)
+	}
+}
+
+func (h *TransactionHandler) writeJSONError(w http.ResponseWriter, message string, status int) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(status)
+	if err := json.NewEncoder(w).Encode(map[string]string{"error": message}); err != nil {
+		h.logger.Error("Failed to write JSON error response", "error", err)
 	}
 }

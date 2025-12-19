@@ -1,6 +1,7 @@
 package http
 
 import (
+	"encoding/json"
 	"log/slog"
 	"net"
 	"net/http"
@@ -50,11 +51,19 @@ func (m *RateLimiterMiddleware) Handler(next http.Handler) http.Handler {
 
 		if !allowed {
 			// If the limit is exceeded, return the error 429 Too Many Requests.
-			writeJSONError(w, "Too Many Requests", http.StatusTooManyRequests)
+			m.writeJSONError(w, "Too Many Requests", http.StatusTooManyRequests)
 			return
 		}
 
 		// If everything is in order, pass control to the next handler.
 		next.ServeHTTP(w, r)
 	})
+}
+
+func (m *RateLimiterMiddleware) writeJSONError(w http.ResponseWriter, message string, status int) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(status)
+	if err := json.NewEncoder(w).Encode(map[string]string{"error": message}); err != nil {
+		m.logger.Error("Failed to write JSON error response", "error", err)
+	}
 }

@@ -11,8 +11,8 @@ import (
 
 // AuthHandler handles authentication-related requests.
 type AuthHandler struct {
-	logger *slog.Logger
-	jwtSecret []byte	
+	jwtSecret []byte
+	logger   *slog.Logger
 }
 
 // NewAuthHandler creates a new AuthHandler instance.
@@ -38,7 +38,7 @@ type LoginResponse struct {
 func (h *AuthHandler) HandleLogin(w http.ResponseWriter, r *http.Request) {
 	var req LoginRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		writeJSONError(w, "Invalid request body", http.StatusBadRequest)
+		h.writeJSONError(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}
 
@@ -53,7 +53,7 @@ func (h *AuthHandler) HandleLogin(w http.ResponseWriter, r *http.Request) {
 		roles = []string{"customer"}
 		userID = "user-customer-456"
 	default:
-		writeJSONError(w, "Invalid username", http.StatusUnauthorized)
+		h.writeJSONError(w, "Invalid username", http.StatusUnauthorized)
 		return
 	}
 	// Create a JWT token
@@ -69,7 +69,7 @@ func (h *AuthHandler) HandleLogin(w http.ResponseWriter, r *http.Request) {
 	// Sign the token with our secret
 	tokenString, err := token.SignedString(h.jwtSecret)
 	if err != nil {
-		writeJSONError(w, "Failed to generate token", http.StatusInternalServerError)
+		h.writeJSONError(w, "Failed to generate token", http.StatusInternalServerError)
 		return
 	}
 
@@ -80,5 +80,13 @@ func (h *AuthHandler) HandleLogin(w http.ResponseWriter, r *http.Request) {
 	if err := json.NewEncoder(w).Encode(LoginResponse{Token: tokenString}); err != nil {
 		// If we can't send a response, we log it
 		h.logger.Error("failed to write json response", "ERROR", err)
+	}
+}
+
+func (h *AuthHandler) writeJSONError(w http.ResponseWriter, message string, status int) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(status)
+	if err := json.NewEncoder(w).Encode(map[string]string{"error": message}); err != nil {
+		h.logger.Error("Failed to write JSON error response", "error", err)
 	}
 }

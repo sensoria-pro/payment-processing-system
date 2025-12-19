@@ -138,7 +138,7 @@ func main() {
 	// Protected routes: /api/v1/*
 	r.Route("/api/v1", func(r chi.Router) {
 		r.Use(
-			httphandler.JWTMiddleware([]byte(jwtSecret)),
+			httphandler.JWTMiddleware([]byte(jwtSecret), logger),
 			opaMiddleware.Authorize,
 		)
 		r.Post("/transaction", transactionHandler.HandleCreateTransaction)
@@ -146,7 +146,7 @@ func main() {
 
 	// Protected routes: /profile (example)
 	r.Group(func(r chi.Router) {
-		r.Use(httphandler.JWTMiddleware([]byte(jwtSecret)))
+		r.Use(httphandler.JWTMiddleware([]byte(jwtSecret), logger))
 		r.Get("/profile", func(w http.ResponseWriter, r *http.Request) {
 			userIDRaw := r.Context().Value("userID")
 			if userID, ok := userIDRaw.(string); ok && userID != "" {
