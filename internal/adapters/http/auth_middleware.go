@@ -63,7 +63,7 @@ func JWTMiddleware(jwtSecret []byte, logger *slog.Logger) func(http.Handler) htt
 	}
 }
 
-
+// writeJSONError — вспомогательная функция для отправки JSON-ошибок
 func writeJSONError(w http.ResponseWriter, message string, status int, logger *slog.Logger) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)

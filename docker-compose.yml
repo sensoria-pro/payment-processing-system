@@ -152,7 +152,8 @@ services:
     command:
       - '--config.file=/etc/prometheus/prometheus.yaml'
     depends_on:
-      - payment-gateway
+      payment-gateway:
+        condition: service_started
 
   grafana:
     image: grafana/grafana-oss:11.1.0
