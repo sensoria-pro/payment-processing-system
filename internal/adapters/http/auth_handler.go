@@ -9,7 +9,6 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
-// AuthHandler handles authentication-related requests.
 type AuthHandler struct {
 	jwtSecret []byte
 	logger   *slog.Logger
