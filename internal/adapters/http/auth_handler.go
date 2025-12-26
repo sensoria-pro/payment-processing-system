@@ -9,6 +9,7 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
+// AuthHandler handles authentication-related requests.
 type AuthHandler struct {
 	jwtSecret []byte
 	logger   *slog.Logger
@@ -41,7 +42,7 @@ func (h *AuthHandler) HandleLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	//TODO: временная имитация - Реализовать запрос в базу данных.
+
 	var roles []string
 	var userID string
 	switch req.Username {
