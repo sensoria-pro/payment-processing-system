@@ -157,7 +157,7 @@ func main() {
 		})
 	})
 
-	// --- 7. HTTP Server ---
+
 	serverAddr := cfg.Server.Port
 	if serverAddr == "" {
 		serverAddr = "8080"
