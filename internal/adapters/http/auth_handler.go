@@ -66,7 +66,7 @@ func (h *AuthHandler) HandleLogin(w http.ResponseWriter, r *http.Request) {
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 
-	// Sign the token with our secret
+
 	tokenString, err := token.SignedString(h.jwtSecret)
 	if err != nil {
 		h.writeJSONError(w, "Failed to generate token", http.StatusInternalServerError)
