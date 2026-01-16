@@ -115,7 +115,7 @@ func main() {
 	)
 
 	// Public routes
-	
+	// r.Post("/login", authHandler.HandleLogin)
 	r.Post("/oauth/token", func(w http.ResponseWriter, r *http.Request) {
 		err := oauthServer.HandleTokenRequest(w, r)
 		if err != nil {

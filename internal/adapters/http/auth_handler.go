@@ -18,7 +18,7 @@ type AuthHandler struct {
 // NewAuthHandler creates a new AuthHandler instance.
 func NewAuthHandler(logger *slog.Logger, jwtSecret string) *AuthHandler {
 	return &AuthHandler{
-		logger:    slog.Default(),
+		logger:    logger,
 		jwtSecret: []byte(jwtSecret),	
 	}
 }
