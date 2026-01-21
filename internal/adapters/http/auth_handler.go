@@ -29,7 +29,6 @@ type LoginRequest struct {
 	Password string `json:"password"` //TODO: реализовать проверку пароля
 }
 
-// LoginResponse - structure for response with token.
 type LoginResponse struct {
 	Token string `json:"token"`
 }
