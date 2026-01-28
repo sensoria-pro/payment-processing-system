@@ -9,7 +9,7 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
-// AuthHandler handles authentication-related requests.
+
 type AuthHandler struct {
 	jwtSecret []byte
 	logger   *slog.Logger
@@ -29,6 +29,7 @@ type LoginRequest struct {
 	Password string `json:"password"` //TODO: реализовать проверку пароля
 }
 
+// LoginResponse - structure for response with token.
 type LoginResponse struct {
 	Token string `json:"token"`
 }
