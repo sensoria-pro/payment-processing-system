@@ -42,7 +42,7 @@ func (h *AuthHandler) HandleLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	//TODO: временная имитация - Реализовать запрос в базу данных.
+
 	var roles []string
 	var userID string
 	switch req.Username {
