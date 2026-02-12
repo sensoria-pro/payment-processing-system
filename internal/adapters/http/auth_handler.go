@@ -56,7 +56,7 @@ func (h *AuthHandler) HandleLogin(w http.ResponseWriter, r *http.Request) {
 		h.writeJSONError(w, "Invalid username", http.StatusUnauthorized)
 		return
 	}
-	
+
 	claims := jwt.MapClaims{
 		"sub":   userID,                               // Subject (user ID)
 		"roles": roles,                                // Custom roles for OPA
