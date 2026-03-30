@@ -171,7 +171,7 @@ jobs:
 
     steps:
       - name: Deploy to Production Server
-        uses: appleboy/ssh-action@v1.2.3 # 1. Deploy to Production Server
+        uses: appleboy/ssh-action@v1.2.5 # 1. Deploy to Production Server
         with:
           host: ${{ secrets.PROD_SERVER_HOST }}
           username: ${{ secrets.PROD_SERVER_USERNAME }}
