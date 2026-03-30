@@ -15,7 +15,7 @@ type AuthHandler struct {
 	logger   *slog.Logger
 }
 
-// NewAuthHandler creates a new AuthHandler instance.
+
 func NewAuthHandler(logger *slog.Logger, jwtSecret string) *AuthHandler {
 	return &AuthHandler{
 		logger:    logger,
@@ -29,7 +29,7 @@ type LoginRequest struct {
 	Password string `json:"password"` //TODO: реализовать проверку пароля
 }
 
-// LoginResponse - structure for response with token.
+
 type LoginResponse struct {
 	Token string `json:"token"`
 }
@@ -73,12 +73,12 @@ func (h *AuthHandler) HandleLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-
+	// Send the token to the client
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 
 	if err := json.NewEncoder(w).Encode(LoginResponse{Token: tokenString}); err != nil {
-		
+		// If we can't send a response, we log it
 		h.logger.Error("failed to write json response", "ERROR", err)
 	}
 }
