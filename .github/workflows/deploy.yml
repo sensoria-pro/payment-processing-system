@@ -38,7 +38,7 @@ jobs:
 
       # 6. Build and publish the payment-gateway image
       - name: Build and push payment-gateway
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: .
           file: ./Dockerfile
@@ -49,7 +49,7 @@ jobs:
             SERVICE_PATH=./cmd/main.go
       
       - name: Build and push anti-fraud-analyzer
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
             context: .
             file: Dockerfile
@@ -60,7 +60,7 @@ jobs:
               SERVICE_PATH=./cmd/anti-fraud-analyzer/main.go
   
       - name: Build and push alerter-service
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
             context: .
             file: Dockerfile
@@ -71,7 +71,7 @@ jobs:
               SERVICE_PATH=./cmd/alerter-service/main.go
 
       - name: Build and push ch-query-tool
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
             context: .
             file: Dockerfile
@@ -82,7 +82,7 @@ jobs:
               SERVICE_PATH=./cmd/ch-query-tool/main.go  
               
       - name: Build and push dlq-tool
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
             context: .
             file: Dockerfile
@@ -93,7 +93,7 @@ jobs:
               SERVICE_PATH=./cmd/dlq-tool/main.go        
   
       - name: Build and push log-streamer
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
             context: .
             file: Dockerfile
@@ -104,7 +104,7 @@ jobs:
               SERVICE_PATH=./cmd/log-streamer/main.go 
               
       - name: Build and push txn-generator
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
             context: .
             file: Dockerfile
@@ -115,7 +115,7 @@ jobs:
               SERVICE_PATH=./cmd/txn-generator/main.go
 
       - name: Build and push service-doctor
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
             context: .
             file: Dockerfile
@@ -126,7 +126,7 @@ jobs:
               SERVICE_PATH=./cmd/service-doctor/main.go 
               
       - name: Build and push clickhouse-migrator
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: .
           file: Dockerfile.migrator
