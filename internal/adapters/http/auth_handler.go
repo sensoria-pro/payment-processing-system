@@ -58,7 +58,7 @@ func (h *AuthHandler) HandleLogin(w http.ResponseWriter, r *http.Request) {
 	}
 	// Create a JWT token
 	claims := jwt.MapClaims{
-		"sub":   userID,                               // Subject (user ID)
+		"sub":   userID,
 		"roles": roles,                                // Custom roles for OPA
 		"exp":   time.Now().Add(time.Hour * 1).Unix(), // Token lifespan is 1 hour
 		"iat":   time.Now().Unix(),                    // Token creation time
@@ -78,7 +78,7 @@ func (h *AuthHandler) HandleLogin(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 
 	if err := json.NewEncoder(w).Encode(LoginResponse{Token: tokenString}); err != nil {
-
+		// If we can't send a response, we log it
 		h.logger.Error("failed to write json response", "ERROR", err)
 	}
 }
