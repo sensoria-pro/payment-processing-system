@@ -23,7 +23,6 @@ func NewAuthHandler(logger *slog.Logger, jwtSecret string) *AuthHandler {
 	}
 }
 
-// LoginRequest - structure for login request.
 type LoginRequest struct {
 	Username string `json:"username"`
 	Password string `json:"password"` //TODO: реализовать проверку пароля
@@ -58,7 +57,7 @@ func (h *AuthHandler) HandleLogin(w http.ResponseWriter, r *http.Request) {
 	}
 	// Create a JWT token
 	claims := jwt.MapClaims{
-		"sub":   userID,
+		"sub":   userID,                               // Subject (user ID)
 		"roles": roles,                                // Custom roles for OPA
 		"exp":   time.Now().Add(time.Hour * 1).Unix(), // Token lifespan is 1 hour
 		"iat":   time.Now().Unix(),                    // Token creation time
