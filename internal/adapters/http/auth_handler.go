@@ -23,6 +23,7 @@ func NewAuthHandler(logger *slog.Logger, jwtSecret string) *AuthHandler {
 	}
 }
 
+
 type LoginRequest struct {
 	Username string `json:"username"`
 	Password string `json:"password"` //TODO: реализовать проверку пароля
